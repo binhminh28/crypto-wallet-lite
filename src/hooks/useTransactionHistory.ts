@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
 import type { Activity, Network } from '../types'
 import { getTransactionHistory } from '../services/testnet'
+import { shorten } from '../utils/format'
 
 export function useTransactionHistory(network: Network, walletAddress?: string, limit = 10) {
   const [activities, setActivities] = useState<Activity[]>([])
@@ -20,15 +21,15 @@ export function useTransactionHistory(network: Network, walletAddress?: string, 
     try {
       const history = await getTransactionHistory(network, walletAddress, limit)
       
-      // Convert to Activity format
       const activities: Activity[] = history.map(tx => {
         const valueInEth = formatEther(tx.value || '0')
+        const value = parseFloat(valueInEth).toFixed(6)
         
         return {
           id: tx.hash,
           title: tx.status === 'sent'
-            ? `Sent ${parseFloat(valueInEth).toFixed(6)} ${network.badge}`
-            : `Received ${parseFloat(valueInEth).toFixed(6)} ${network.badge}`,
+            ? `Sent ${value} ${network.badge}`
+            : `Received ${value} ${network.badge}`,
           detail: `${shorten(tx.from)} → ${shorten(tx.to)}`,
           timestamp: formatTimestamp(tx.timestamp),
           status: tx.status,
@@ -53,10 +54,6 @@ export function useTransactionHistory(network: Network, walletAddress?: string, 
   }
 
   return { activities, loading, error, refresh }
-}
-
-function shorten(address: string) {
-  return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
 function formatTimestamp(timestamp: number) {

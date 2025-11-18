@@ -27,7 +27,7 @@ export function ActivityFeed({ activity, network, loading, onViewDetails, onRefr
             onClick={onRefresh}
             disabled={loading}
             className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate hover:bg-white/10 hover:text-white transition disabled:opacity-50"
-            title="Làm mới (tiết kiệm API calls - chỉ refresh khi cần)"
+            title="Làm mới"
           >
             {loading ? '⏳' : '🔄'}
           </button>

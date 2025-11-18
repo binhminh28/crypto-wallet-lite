@@ -31,7 +31,6 @@ export function useBlockchainData(network: Network, address?: string): Blockchai
     setError(undefined)
 
     try {
-      // Fetch balance và network pulse song song để tối ưu
       const [balance, pulse] = await Promise.all([
         getWalletNativeBalance(network, address),
         getNetworkPulse(network),

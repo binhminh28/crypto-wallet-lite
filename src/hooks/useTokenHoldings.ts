@@ -43,11 +43,9 @@ export function useTokenHoldings(network: Network, walletAddress?: string, nativ
     }
   }, [network.id, walletAddress])
 
-  // Thêm native token vào danh sách tokens
   const tokensWithNative = useMemo(() => {
     const result = [...tokens]
     
-    // Thêm native token nếu có balance
     if (nativeBalance && nativeBalance !== '0' && walletAddress) {
       const balanceNum = parseFloat(nativeBalance)
       if (!isNaN(balanceNum) && balanceNum > 0) {
@@ -58,7 +56,6 @@ export function useTokenHoldings(network: Network, walletAddress?: string, nativ
                 network.name === 'Base Sepolia' ? 'Ether' : 'Native Token',
           balance: balanceNum,
         }
-        // Thêm native token vào đầu danh sách
         result.unshift(nativeToken)
       }
     }

@@ -26,26 +26,10 @@ export async function getTokenHoldings(_network: Network, walletAddress?: string
   return []
 }
 
-export async function estimateGasFee(network: Network): Promise<string> {
-  try {
-    const provider = getProvider(network)
-    const feeData = await provider.getFeeData()
-    
-    if (feeData.gasPrice) {
-      return formatEther(feeData.gasPrice)
-    }
-    return '0.000021'
-  } catch (error) {
-    console.error('Error fetching gas fee:', error)
-    return '0.000021'
-  }
-}
-
 export async function getWalletNativeBalance(network: Network, address?: string): Promise<string> {
   if (!address) return '0'
   
   if (!address.startsWith('0x') || address.length !== 42) {
-    console.error('Invalid address format:', address)
     return '0'
   }
   
@@ -111,16 +95,11 @@ export async function sendNativeTransaction({
     }
     
     const amountInWei = parseEther(draft.amount)
-    
-    // Lấy nonce và gas price
     const nonce = await provider.getTransactionCount(wallet.address, 'pending')
     const feeData = await provider.getFeeData()
     const gasPrice = feeData.gasPrice || parseEther('0.00000005')
-    
-    // Hardcode gasLimit = 21000 cho native transfer (không cần estimateGas)
     const gasLimit = 21000n
     
-    // Kiểm tra số dư
     const totalCost = amountInWei + (gasLimit * gasPrice)
     const balance = await provider.getBalance(wallet.address)
     
@@ -132,9 +111,9 @@ export async function sendNativeTransaction({
     const txRequest = {
       to: draft.to,
       value: amountInWei,
-      gasLimit: gasLimit,
-      gasPrice: gasPrice, 
-      nonce: nonce,
+      gasLimit,
+      gasPrice, 
+      nonce,
       chainId: Number(network.chainId), 
       type: 0 
     }

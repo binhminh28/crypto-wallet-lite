@@ -73,11 +73,7 @@ export function SendTransactionForm({
     event.preventDefault()
     event.stopPropagation()
     
-    // Prevent double submission - check ngay lập tức
-    if (isSubmitting) {
-      console.log('[SendTransactionForm] Already submitting, preventing form submit')
-      return false
-    }
+    if (isSubmitting) return false
     
     // Disable form ngay lập tức để tránh double submit
     if (formRef.current) {

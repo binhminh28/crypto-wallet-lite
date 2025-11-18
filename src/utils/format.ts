@@ -3,6 +3,8 @@ export function shortAddress(address: string) {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
 }
 
+export const shorten = shortAddress
+
 export function relativeTimeFromNow(date: Date) {
   const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
   if (seconds < 60) return `${seconds}s trước`

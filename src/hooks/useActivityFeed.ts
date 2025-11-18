@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { Activity, Network, TransactionDraft, WalletAccount } from '../types'
-import { relativeTimeFromNow } from '../utils/format'
+import { shorten } from '../utils/format'
 
 type ActivityFeedOptions = {
   initialActivity: Activity[]
@@ -25,7 +25,7 @@ export function useActivityFeed({ initialActivity }: ActivityFeedOptions) {
     }
 
     const entry: Activity = {
-      id: txHash || crypto.randomUUID(), // Dùng txHash nếu có (real transaction)
+      id: txHash || crypto.randomUUID(),
       title: `Sent ${draft.amount} ${network.badge}`,
       detail: `${shorten(from.address)} → ${shorten(draft.to)} · ${draft.note || 'Không ghi chú'}`,
       timestamp: 'Vừa xong',
@@ -35,31 +35,6 @@ export function useActivityFeed({ initialActivity }: ActivityFeedOptions) {
     return entry
   }
 
-  const recordFaucetClaim = (networkName: string, amount: string) => {
-    const entry: Activity = {
-      id: crypto.randomUUID(),
-      title: `Claim faucet ${amount}`,
-      detail: `${networkName} faucet helper`,
-      timestamp: 'Vừa xong',
-      status: 'faucet',
-    }
-    setActivity((prev) => [entry, ...prev])
-    return entry
-  }
-
-  const refreshTimestamps = () => {
-    setActivity((prev) =>
-      prev.map((entry) => {
-        if (entry.timestamp === 'Vừa xong') return entry
-        return { ...entry, timestamp: relativeTimeFromNow(new Date()) }
-      }),
-    )
-  }
-
-  return { activity, recordTransaction, recordFaucetClaim, refreshTimestamps }
-}
-
-function shorten(value: string) {
-  return `${value.slice(0, 6)}…${value.slice(-4)}`
+  return { activity, recordTransaction }
 }
 

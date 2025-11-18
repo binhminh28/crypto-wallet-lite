@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { ActivityFeed } from './components/sections/ActivityFeed'
 import { TransactionDetailsModal } from './components/shared/TransactionDetailsModal'
 import { HeroSection } from './components/sections/HeroSection'
@@ -43,24 +43,18 @@ function App() {
     10,
   )
   
-  // Merge real activities với recorded activities
   const allActivities = useMemo(() => {
-    const merged = [...realActivities, ...activity]
-    return merged.sort((a, b) => {
-      // Sort by timestamp (newest first) - simplified
-      return b.id.localeCompare(a.id)
-    }).slice(0, 10)
+    return [...realActivities, ...activity]
+      .sort((a, b) => b.id.localeCompare(a.id))
+      .slice(0, 10)
   }, [realActivities, activity])
 
-  // Tính total USD từ tất cả tokens (đã bao gồm native token)
   const totalUsd = useMemo(() => {
     return currentTokens.reduce((sum, token) => {
       return sum + calculateTokenUsd(token, walletManager.selectedNetwork)
     }, 0)
   }, [currentTokens, walletManager.selectedNetwork])
   
-  // Sử dụng gasPrice từ blockchainSnapshot thay vì gọi estimateGasFee riêng
-  // để tránh duplicate request
   const gasFee = blockchainSnapshot.gasPrice || '0.000021'
 
   const [txError, setTxError] = useState<string | null>(null)
@@ -68,33 +62,22 @@ function App() {
   const [selectedTransaction, setSelectedTransaction] = useState<typeof allActivities[0] | null>(null)
   const [transactionResult, setTransactionResult] = useState<{ hash: string; status: 'success' | 'failed' } | null>(null)
   
-  // Use ref để track đang submit và tránh double submission
   const isSubmittingRef = useRef(false)
   const submissionIdRef = useRef<string | null>(null)
 
   const handleSubmitTx = useCallback(async () => {
-    // Kiểm tra nếu đang submit thì return ngay
-    if (isSubmittingRef.current || isSubmitting) {
-      console.log('[App] Already submitting, ignoring duplicate request')
-      return
-    }
+    if (isSubmittingRef.current || isSubmitting) return
     
-    // Tạo unique ID cho submission này
     const currentSubmissionId = `tx-${Date.now()}-${Math.random()}`
     submissionIdRef.current = currentSubmissionId
     
     try {
-      // Set flag ngay từ đầu - phải set trước khi bất kỳ async operation nào
       isSubmittingRef.current = true
       setIsSubmitting(true)
       setTxError(null)
       setTransactionResult(null)
       
-      // Kiểm tra lại submission ID để đảm bảo không bị override bởi submission khác
-      if (submissionIdRef.current !== currentSubmissionId) {
-        console.log('[App] Submission ID mismatch, aborting')
-        return
-      }
+      if (submissionIdRef.current !== currentSubmissionId) return
       
       if (!walletManager.activeWallet) {
         setTxError('Chưa có ví nào được chọn')
@@ -115,30 +98,16 @@ function App() {
         return
       }
       
-      // Kiểm tra lại một lần nữa trước khi gửi transaction
-      if (submissionIdRef.current !== currentSubmissionId) {
-        console.log('[App] Submission ID mismatch before sending, aborting')
-        return
-      }
+      if (submissionIdRef.current !== currentSubmissionId) return
       
-      console.log('[App] Starting transaction submission:', currentSubmissionId)
-      
-      // Luôn gửi thật trên testnet (không có simulation mode)
       const txResult = await sendNativeTransaction({
         network: walletManager.selectedNetwork,
         draft: walletManager.draft,
         privateKey: walletManager.activeWallet!.privateKey,
       })
       
-      // Kiểm tra lại submission ID sau khi nhận response
-      if (submissionIdRef.current !== currentSubmissionId) {
-        console.log('[App] Submission ID mismatch after response, ignoring result')
-        return
-      }
+      if (submissionIdRef.current !== currentSubmissionId) return
       
-      console.log('[App] Transaction sent successfully:', txResult)
-      
-      // Record transaction với transaction hash nếu có
       recordTransaction({
         from: walletManager.activeWallet!,
         draft: walletManager.draft,
@@ -148,27 +117,18 @@ function App() {
       
       walletManager.resetDraft()
       
-      // Hiển thị result (cả success và failed đều có hash)
       if (txResult?.hash) {
         setTransactionResult({
           hash: txResult.hash,
           status: txResult.status,
         })
-        
-        // Refresh transaction history sau khi gửi (cả success và failed)
-        // Delay một chút để đảm bảo transaction đã được index trên explorer
-        setTimeout(() => {
-          refreshHistory()
-        }, 2000)
+        setTimeout(() => refreshHistory(), 2000)
       }
     } catch (error) {
-      // Chỉ xử lý error nếu submission ID vẫn match
       if (submissionIdRef.current === currentSubmissionId) {
-        const errorMessage = error instanceof Error ? error.message : 'Không gửi được giao dịch'
-        setTxError(errorMessage)
+        setTxError(error instanceof Error ? error.message : 'Không gửi được giao dịch')
       }
     } finally {
-      // Chỉ reset nếu submission ID vẫn match
       if (submissionIdRef.current === currentSubmissionId) {
         setIsSubmitting(false)
         isSubmittingRef.current = false
