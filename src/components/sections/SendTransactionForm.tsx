@@ -1,4 +1,10 @@
 import type { Network, TransactionDraft, WalletAccount } from '../../types'
+import React, { useEffect, useRef } from 'react'
+
+type TransactionResult = {
+  hash: string
+  status: 'success' | 'failed'
+} | null
 
 type SendTransactionFormProps = {
   draft: TransactionDraft
@@ -10,6 +16,8 @@ type SendTransactionFormProps = {
   error?: string
   gasFee: string
   nativeBalance?: string | null
+  transactionResult?: TransactionResult
+  onClearResult?: () => void
 }
 
 export function SendTransactionForm({
@@ -22,7 +30,11 @@ export function SendTransactionForm({
   error,
   gasFee,
   nativeBalance,
+  transactionResult,
+  onClearResult,
 }: SendTransactionFormProps) {
+  const formRef = useRef<HTMLFormElement>(null)
+  
   // Tính số tiền có thể gửi tối đa (số dư, vì số dư đã là tổng có thể gửi)
   const calculateMaxSendable = () => {
     if (!nativeBalance) return null
@@ -44,18 +56,45 @@ export function SendTransactionForm({
   const maxSendable = calculateMaxSendable()
   const actualReceive = calculateActualReceive()
 
+  // Re-enable form khi không còn submitting
+  useEffect(() => {
+    if (!isSubmitting && formRef.current) {
+      formRef.current.style.pointerEvents = 'auto'
+    }
+  }, [isSubmitting])
+
   const handleUseMax = () => {
     if (maxSendable && parseFloat(maxSendable) > 0) {
       onChange({ ...draft, amount: maxSendable })
     }
   }
+  
+  const handleFormSubmit = (event: React.FormEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    // Prevent double submission - check ngay lập tức
+    if (isSubmitting) {
+      console.log('[SendTransactionForm] Already submitting, preventing form submit')
+      return false
+    }
+    
+    // Disable form ngay lập tức để tránh double submit
+    if (formRef.current) {
+      formRef.current.style.pointerEvents = 'none'
+    }
+    
+    // Gọi onSubmit
+    onSubmit()
+    
+    return false
+  }
+
   return (
     <form
+      ref={formRef}
       className="glass-panel flex flex-col gap-4 p-6 h-full"
-      onSubmit={(event) => {
-        event.preventDefault()
-        onSubmit()
-      }}
+      onSubmit={handleFormSubmit}
     >
       <p className="section-title">Gửi giao dịch</p>
       <div className="text-xs text-slate">
@@ -141,14 +180,70 @@ export function SendTransactionForm({
           </div>
         )}
       </div>
-      {error ? <p className="text-sm text-pink-300">{error}</p> : null}
-      <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-xs text-yellow-200">
-        ⚠️ Giao dịch sẽ được gửi thật lên {network.name} testnet
-      </div>
+      {error ? (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <div className="flex items-center gap-2">
+            <span>❌</span>
+            <span className="flex-1">{error}</span>
+          </div>
+        </div>
+      ) : null}
+      
+      {transactionResult && (
+        <div className={`rounded-2xl border px-4 py-3 text-sm ${
+          transactionResult.status === 'success'
+            ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
+            : 'border-red-500/30 bg-red-500/10 text-red-200'
+        }`}>
+          <div className="flex items-start gap-2">
+            <span>{transactionResult.status === 'success' ? '✅' : '❌'}</span>
+            <div className="flex-1">
+              <p className="font-semibold mb-1">
+                {transactionResult.status === 'success' 
+                  ? 'Giao dịch đã được gửi thành công!' 
+                  : 'Giao dịch thất bại'}
+              </p>
+              {transactionResult.hash && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <a
+                    href={`${network.explorer}/tx/${transactionResult.hash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs underline hover:opacity-80 break-all"
+                  >
+                    Xem trên {network.name === 'Sepolia' ? 'Etherscan' : 'Explorer'}
+                  </a>
+                  <button
+                    type="button"
+                    onClick={onClearResult}
+                    className="text-xs underline hover:opacity-80"
+                  >
+                    Đóng
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {!error && !transactionResult && (
+        <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-xs text-yellow-200">
+          ⚠️ Giao dịch sẽ được gửi thật lên {network.name} testnet
+        </div>
+      )}
       <button
         type="submit"
         disabled={isSubmitting}
-        className="rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-glow disabled:opacity-60"
+        onClick={(e) => {
+          // Prevent multiple clicks
+          if (isSubmitting) {
+            e.preventDefault()
+            e.stopPropagation()
+            return false
+          }
+        }}
+        className="rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-glow disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {isSubmitting ? 'Đang gửi...' : 'Gửi giao dịch'}
       </button>

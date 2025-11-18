@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityFeed } from './components/sections/ActivityFeed'
 import { TransactionDetailsModal } from './components/shared/TransactionDetailsModal'
 import { HeroSection } from './components/sections/HeroSection'
@@ -66,24 +66,62 @@ function App() {
   const [txError, setTxError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<typeof allActivities[0] | null>(null)
+  const [transactionResult, setTransactionResult] = useState<{ hash: string; status: 'success' | 'failed' } | null>(null)
+  
+  // Use ref để track đang submit và tránh double submission
+  const isSubmittingRef = useRef(false)
+  const submissionIdRef = useRef<string | null>(null)
 
-  const handleSubmitTx = async () => {
+  const handleSubmitTx = useCallback(async () => {
+    // Kiểm tra nếu đang submit thì return ngay
+    if (isSubmittingRef.current || isSubmitting) {
+      console.log('[App] Already submitting, ignoring duplicate request')
+      return
+    }
+    
+    // Tạo unique ID cho submission này
+    const currentSubmissionId = `tx-${Date.now()}-${Math.random()}`
+    submissionIdRef.current = currentSubmissionId
+    
     try {
+      // Set flag ngay từ đầu - phải set trước khi bất kỳ async operation nào
+      isSubmittingRef.current = true
+      setIsSubmitting(true)
       setTxError(null)
+      setTransactionResult(null)
+      
+      // Kiểm tra lại submission ID để đảm bảo không bị override bởi submission khác
+      if (submissionIdRef.current !== currentSubmissionId) {
+        console.log('[App] Submission ID mismatch, aborting')
+        return
+      }
+      
       if (!walletManager.activeWallet) {
         setTxError('Chưa có ví nào được chọn')
+        isSubmittingRef.current = false
+        setIsSubmitting(false)
         return
       }
       if (!walletManager.draft.to || !walletManager.draft.amount) {
         setTxError('Điền đủ địa chỉ nhận và số lượng nhé!')
+        isSubmittingRef.current = false
+        setIsSubmitting(false)
         return
       }
       if (!walletManager.activeWallet?.privateKey) {
         setTxError('Ví này không có private key để ký giao dịch')
+        isSubmittingRef.current = false
+        setIsSubmitting(false)
         return
       }
       
-      setIsSubmitting(true)
+      // Kiểm tra lại một lần nữa trước khi gửi transaction
+      if (submissionIdRef.current !== currentSubmissionId) {
+        console.log('[App] Submission ID mismatch before sending, aborting')
+        return
+      }
+      
+      console.log('[App] Starting transaction submission:', currentSubmissionId)
       
       // Luôn gửi thật trên testnet (không có simulation mode)
       const txResult = await sendNativeTransaction({
@@ -91,6 +129,13 @@ function App() {
         draft: walletManager.draft,
         privateKey: walletManager.activeWallet!.privateKey,
       })
+      
+      // Kiểm tra lại submission ID sau khi nhận response
+      if (submissionIdRef.current !== currentSubmissionId) {
+        console.log('[App] Submission ID mismatch after response, ignoring result')
+        return
+      }
+      
       console.log('[App] Transaction sent successfully:', txResult)
       
       // Record transaction với transaction hash nếu có
@@ -102,16 +147,39 @@ function App() {
       })
       
       walletManager.resetDraft()
-      setIsSubmitting(false)
       
-      // Hiển thị success message
+      // Hiển thị result (cả success và failed đều có hash)
       if (txResult?.hash) {
-        alert(`Giao dịch đã được gửi thành công!\n\nTransaction Hash: ${txResult.hash}\n\nBạn có thể xem trên Explorer: ${walletManager.selectedNetwork.explorer}/tx/${txResult.hash}`)
+        setTransactionResult({
+          hash: txResult.hash,
+          status: txResult.status,
+        })
+        
+        // Refresh transaction history sau khi gửi (cả success và failed)
+        // Delay một chút để đảm bảo transaction đã được index trên explorer
+        setTimeout(() => {
+          refreshHistory()
+        }, 2000)
       }
     } catch (error) {
-      setIsSubmitting(false)
-      setTxError(error instanceof Error ? error.message : 'Không gửi được giao dịch')
+      // Chỉ xử lý error nếu submission ID vẫn match
+      if (submissionIdRef.current === currentSubmissionId) {
+        const errorMessage = error instanceof Error ? error.message : 'Không gửi được giao dịch'
+        setTxError(errorMessage)
+      }
+    } finally {
+      // Chỉ reset nếu submission ID vẫn match
+      if (submissionIdRef.current === currentSubmissionId) {
+        setIsSubmitting(false)
+        isSubmittingRef.current = false
+        submissionIdRef.current = null
+      }
     }
+  }, [walletManager.activeWallet, walletManager.draft, walletManager.selectedNetwork, isSubmitting, recordTransaction, refreshHistory])
+
+  const handleClearResult = () => {
+    setTransactionResult(null)
+    setTxError(null)
   }
 
   return (
@@ -161,6 +229,8 @@ function App() {
               error={txError ?? undefined}
               gasFee={gasFee}
               nativeBalance={blockchainSnapshot.nativeBalance}
+              transactionResult={transactionResult}
+              onClearResult={handleClearResult}
             />
           </div>
           <div className="h-full">

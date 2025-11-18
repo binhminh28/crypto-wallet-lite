@@ -1,39 +1,42 @@
-import { JsonRpcProvider, formatEther, getAddress } from 'ethers'
+import { JsonRpcProvider, formatEther, getAddress, parseEther, Wallet } from 'ethers'
 import type { Network, Token, TransactionDraft } from '../types'
 
-// Cache provider instances để tránh tạo lại và giảm số lượng request
 const providerCache = new Map<string, JsonRpcProvider>()
 
-function getProvider(rpcUrl: string): JsonRpcProvider {
-  if (!providerCache.has(rpcUrl)) {
-    // Tạo provider mới và disable auto-detect network để tránh thêm request
-    const provider = new JsonRpcProvider(rpcUrl)
-    providerCache.set(rpcUrl, provider)
+function getProvider(network: Network): JsonRpcProvider {
+  if (!providerCache.has(network.rpc)) {
+    const provider = new JsonRpcProvider(
+      network.rpc, 
+      {
+        chainId: Number(network.chainId),
+        name: network.name
+      }, 
+      { 
+        staticNetwork: true, // Ngăn ethers tự động query network ID (giảm request)
+        batchMaxCount: 1 // Tắt batch để tránh lỗi RPC public
+      }
+    )
+    providerCache.set(network.rpc, provider)
   }
-  return providerCache.get(rpcUrl)!
+  return providerCache.get(network.rpc)!
 }
 
 export async function getTokenHoldings(_network: Network, walletAddress?: string): Promise<Token[]> {
   if (!walletAddress) return []
-  // Trả về empty array - sẽ được implement sau để fetch từ blockchain
   return []
 }
 
 export async function estimateGasFee(network: Network): Promise<string> {
   try {
-    const provider = getProvider(network.rpc)
+    const provider = getProvider(network)
     const feeData = await provider.getFeeData()
     
-    // Trả về gas price dưới dạng ETH (đã format)
     if (feeData.gasPrice) {
       return formatEther(feeData.gasPrice)
     }
-    
-    // Fallback về giá trị default nếu không lấy được
     return '0.000021'
   } catch (error) {
     console.error('Error fetching gas fee:', error)
-    // Trả về giá trị default nếu có lỗi
     return '0.000021'
   }
 }
@@ -41,62 +44,34 @@ export async function estimateGasFee(network: Network): Promise<string> {
 export async function getWalletNativeBalance(network: Network, address?: string): Promise<string> {
   if (!address) return '0'
   
-  // Validate địa chỉ cơ bản
   if (!address.startsWith('0x') || address.length !== 42) {
     console.error('Invalid address format:', address)
     return '0'
   }
   
   try {
-    // Normalize địa chỉ để có checksum đúng trước khi query
-    // getAddress() sẽ tự động sửa checksum nếu có thể
     let normalizedAddress: string
     try {
       normalizedAddress = getAddress(address)
     } catch {
-      // Nếu getAddress fail, thử với lowercase
       normalizedAddress = address.toLowerCase()
     }
     
-    // Sử dụng cached provider
-    const provider = getProvider(network.rpc)
-    
-    // Lấy số dư từ blockchain (trả về BigInt trong wei)
+    const provider = getProvider(network)
     const balance = await provider.getBalance(normalizedAddress)
-    
-    // Chuyển đổi từ wei sang ETH (hoặc native token)
-    const balanceInEther = formatEther(balance)
-    
-    return balanceInEther
+    return formatEther(balance)
+
   } catch (error) {
     console.error('Error fetching wallet balance:', error)
-    
-    // Nếu vẫn lỗi, thử lại với địa chỉ lowercase trực tiếp
-    if (error instanceof Error && error.message.includes('bad address checksum')) {
-      try {
-        const lowerAddress = address.toLowerCase()
-        const provider = getProvider(network.rpc)
-        const balance = await provider.getBalance(lowerAddress)
-        return formatEther(balance)
-      } catch (retryError) {
-        console.error('Error fetching wallet balance (retry failed):', retryError)
-        return '0'
-      }
-    }
-    
-    // Trả về '0' nếu có lỗi
     return '0'
   }
 }
 
 export async function getNetworkPulse(network: Network) {
   try {
-    const provider = getProvider(network.rpc)
-    // Gọi song song để tối ưu
-    const [blockNumber, feeData] = await Promise.all([
-      provider.getBlockNumber(),
-      provider.getFeeData(),
-    ])
+    const provider = getProvider(network)
+    const blockNumber = await provider.getBlockNumber()
+    const feeData = await provider.getFeeData()
     
     return {
       blockNumber,
@@ -104,8 +79,6 @@ export async function getNetworkPulse(network: Network) {
       baseFee: feeData.maxFeePerGas ? formatEther(feeData.maxFeePerGas) : '0.000000021',
     }
   } catch (error) {
-    console.error('Error fetching network pulse:', error)
-    // Trả về giá trị default nếu có lỗi
     return {
       blockNumber: 0,
       gasPrice: '0.000000021',
@@ -126,23 +99,47 @@ export async function sendNativeTransaction({
   if (!draft.to || !draft.amount) {
     throw new Error('Thiếu địa chỉ nhận hoặc số lượng')
   }
-  
+
   try {
-    const { Wallet } = await import('ethers')
-    const provider = getProvider(network.rpc)
+    const provider = getProvider(network)
     const wallet = new Wallet(privateKey, provider)
     
-    // Parse amount từ string sang BigInt (wei)
-    const amountInWei = BigInt(Math.floor(parseFloat(draft.amount) * 1e18))
+    try {
+      getAddress(draft.to)
+    } catch {
+      throw new Error('Địa chỉ nhận không hợp lệ')
+    }
     
-    // Gửi transaction
-    const tx = await wallet.sendTransaction({
+    const amountInWei = parseEther(draft.amount)
+    
+    // Lấy nonce và gas price
+    const nonce = await provider.getTransactionCount(wallet.address, 'pending')
+    const feeData = await provider.getFeeData()
+    const gasPrice = feeData.gasPrice || parseEther('0.00000005')
+    
+    // Hardcode gasLimit = 21000 cho native transfer (không cần estimateGas)
+    const gasLimit = 21000n
+    
+    // Kiểm tra số dư
+    const totalCost = amountInWei + (gasLimit * gasPrice)
+    const balance = await provider.getBalance(wallet.address)
+    
+    if (balance < totalCost) {
+      const missing = formatEther(totalCost - balance)
+      throw new Error(`Số dư không đủ trả phí gas. Thiếu khoảng ${missing} ${network.badge}`)
+    }
+    
+    const txRequest = {
       to: draft.to,
       value: amountInWei,
-    })
+      gasLimit: gasLimit,
+      gasPrice: gasPrice, 
+      nonce: nonce,
+      chainId: Number(network.chainId), 
+      type: 0 
+    }
     
-    // Đợi transaction được mine
-    const receipt = await tx.wait()
+    const tx = await wallet.sendTransaction(txRequest)
     
     return {
       hash: tx.hash,
@@ -150,31 +147,35 @@ export async function sendNativeTransaction({
       to: draft.to,
       value: draft.amount,
       network: network.name,
-      blockNumber: receipt?.blockNumber || 0,
-      status: receipt?.status === 1 ? 'success' as const : 'failed' as const,
+      blockNumber: 0,
+      status: 'success' as const,
     }
+
   } catch (error) {
-    console.error('Error sending transaction:', error)
-    throw new Error(`Không thể gửi giao dịch: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    if (error instanceof Error) {
+      const msg = error.message.toLowerCase()
+      if (msg.includes('429') || msg.includes('too many requests')) {
+        throw new Error('RPC đang bận (429). Vui lòng đợi 30s rồi thử lại.')
+      }
+      if (msg.includes('insufficient funds')) {
+        throw new Error('Số dư không đủ để thực hiện giao dịch.')
+      }
+      throw new Error(error.message)
+    }
+    throw new Error('Lỗi không xác định khi gửi giao dịch')
   }
 }
-
 
 export async function getTransactionHistory(network: Network, address: string, limit = 50) {
   if (!address) return []
 
   try {
-    // Etherscan API V2 - unified endpoint với chainid
     const baseUrl = 'https://api.etherscan.io/v2/api'
     
-    // Sử dụng chainId từ network object
-    if (!network.chainId) {
-      console.warn(`No chain ID for network: ${network.id}`)
-      return []
-    }
+    if (!network.chainId) return []
 
     const params = new URLSearchParams({
-      chainid: network.chainId,
+      chainid: network.chainId.toString(),
       module: 'account',
       action: 'txlist',
       address: address,
@@ -186,18 +187,12 @@ export async function getTransactionHistory(network: Network, address: string, l
     })
 
     const apiKey = import.meta.env.VITE_ETHERSCAN_API_KEY
-    if (apiKey) {
-      params.append('apikey', apiKey)
-    }
+    if (apiKey) params.append('apikey', apiKey)
 
     const response = await fetch(`${baseUrl}?${params.toString()}`)
     const data = await response.json()
 
     if (data.status !== '1' || !Array.isArray(data.result)) {
-      if (data.message === 'No transactions found') {
-        return []
-      }
-      console.error('Explorer API error:', data.message || data.result)
       return []
     }
 
@@ -205,15 +200,27 @@ export async function getTransactionHistory(network: Network, address: string, l
 
     return data.result
       .filter((tx: any) => tx.hash && tx.blockNumber && tx.timeStamp)
-      .map((tx: any) => ({
-        hash: tx.hash,
-        from: tx.from,
-        to: tx.to,
-        value: tx.value,
-        timestamp: parseInt(tx.timeStamp) * 1000,
-        blockNumber: parseInt(tx.blockNumber),
-        status: tx.from.toLowerCase() === normalizedAddress ? ('sent' as const) : ('received' as const),
-      }))
+      .map((tx: any) => {
+        const txFrom = tx.from?.toLowerCase() || ''
+        const txTo = tx.to?.toLowerCase() || ''
+        
+        // Xác định status: nếu from = address hiện tại thì là sent, nếu to = address hiện tại thì là received
+        const status = txFrom === normalizedAddress 
+          ? ('sent' as const) 
+          : txTo === normalizedAddress 
+            ? ('received' as const)
+            : ('sent' as const) // Fallback (không nên xảy ra)
+        
+        return {
+          hash: tx.hash,
+          from: tx.from,
+          to: tx.to,
+          value: tx.value,
+          timestamp: parseInt(tx.timeStamp) * 1000,
+          blockNumber: parseInt(tx.blockNumber),
+          status,
+        }
+      })
   } catch (error) {
     console.error('Error fetching transaction history:', error)
     return []
