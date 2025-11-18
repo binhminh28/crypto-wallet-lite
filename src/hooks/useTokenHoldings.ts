@@ -1,0 +1,72 @@
+import { useEffect, useState, useMemo } from 'react'
+import type { Network, Token } from '../types'
+import { getTokenHoldings } from '../services/testnet'
+
+export function useTokenHoldings(network: Network, walletAddress?: string, nativeBalance?: string | null) {
+  const [tokens, setTokens] = useState<Token[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!walletAddress) {
+      setTokens([])
+      setLoading(false)
+      return
+    }
+
+    let cancelled = false
+
+    async function fetchTokens() {
+      setLoading(true)
+      setError(null)
+      try {
+        const result = await getTokenHoldings(network, walletAddress)
+        if (!cancelled) {
+          setTokens(result)
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch tokens')
+          setTokens([])
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchTokens()
+
+    return () => {
+      cancelled = true
+    }
+  }, [network.id, walletAddress])
+
+  // Thêm native token vào danh sách tokens
+  const tokensWithNative = useMemo(() => {
+    const result = [...tokens]
+    
+    // Thêm native token nếu có balance
+    if (nativeBalance && nativeBalance !== '0' && walletAddress) {
+      const balanceNum = parseFloat(nativeBalance)
+      if (!isNaN(balanceNum) && balanceNum > 0) {
+        const nativeToken: Token = {
+          symbol: network.badge,
+          name: network.name === 'Ethereum Sepolia' ? 'Ether' : 
+                network.name === 'Polygon Amoy' ? 'Polygon' : 
+                network.name === 'Base Sepolia' ? 'Ether' : 'Native Token',
+          balance: balanceNum,
+        }
+        // Thêm native token vào đầu danh sách
+        result.unshift(nativeToken)
+      }
+    }
+    
+    return result
+  }, [tokens, nativeBalance, network, walletAddress])
+
+  return { tokens: tokensWithNative, loading, error }
+}
+
+
