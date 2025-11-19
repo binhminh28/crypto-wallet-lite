@@ -548,6 +548,10 @@ npm run build
 - Click "Chi tiết" để xem thông tin đầy đủ
 - Click "Explorer" để mở trên blockchain explorer
 
+### Hình ảnh ứng dụng
+<img width="1232" height="1176" alt="image" src="https://github.com/user-attachments/assets/4584dfae-7c53-4454-846f-b4d19d9b57d2" />
+<img width="1221" height="597" alt="image" src="https://github.com/user-attachments/assets/fe958084-b978-418e-bf82-53a3be2db3cf" />
+
 ---
 
 ## 🔍 Chi tiết Kỹ thuật
