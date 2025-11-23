@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
-import type { WalletAccount } from '../types'
-import { copyToClipboard } from '../utils/format'
+import type { WalletAccount } from '../../types'
+import { copyToClipboard } from '../../utils/format'
 
 type WalletInfoModalProps = {
   wallet: WalletAccount

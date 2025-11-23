@@ -13,7 +13,7 @@ export type Token = {
   balance: number
 }
 
-export type ActivityStatus = 'sent' | 'received' | 'learn' | 'faucet'
+export type ActivityStatus = 'sent' | 'received'
 
 export type Activity = {
   id: string
@@ -21,27 +21,6 @@ export type Activity = {
   detail: string
   timestamp: string
   status: ActivityStatus
-}
-
-export type Lesson = {
-  id: string
-  title: string
-  caption: string
-  duration: string
-  status: 'locked' | 'in-progress' | 'done'
-}
-
-export type FaucetTip = {
-  id: string
-  network: string
-  url: string
-  note: string
-}
-
-export type Web3Snippet = {
-  id: string
-  title: string
-  code: string
 }
 
 export type WalletAccount = {

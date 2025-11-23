@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { Network, Token } from '../../types'
-import { calculateTokenUsd, getTokenColor } from '../../services/tokenPrice'
+import { calculateTokenUsd, getTokenColor } from '../../services/token/price'
 
 type PortfolioOverviewProps = {
   tokens: Token[]

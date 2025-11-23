@@ -1,4 +1,4 @@
-import type { Network, Token } from '../types'
+import type { Network, Token } from '../../types'
 
 export function getTokenPrice(token: Token, network: Network): number {
   if (token.symbol === network.badge) {
@@ -9,13 +9,13 @@ export function getTokenPrice(token: Token, network: Network): number {
     }
     return priceMap[network.id] || 0
   }
-  
+
   return 0
 }
 
 export function calculateTokenUsd(token: Token, network: Network): number {
   if (!token.balance || token.balance <= 0) return 0
-  
+
   const price = getTokenPrice(token, network)
   return token.balance * price
 }
@@ -29,7 +29,7 @@ export function getTokenColor(token: Token, network: Network): string {
     }
     return colorMap[network.id] || 'from-cyan-300 to-blue-500'
   }
-  
+
   return 'from-gray-300 to-gray-500'
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Network } from '../types'
-import { getWalletNativeBalance, getNetworkPulse } from '../services/testnet'
+import { getWalletNativeBalance, getNetworkPulse } from '../services/blockchain/balance'
+import { getErrorMessage } from '../lib/errors'
 
 type BlockchainSnapshot = {
   blockNumber: number | null
@@ -43,7 +44,7 @@ export function useBlockchainData(network: Network, address?: string): Blockchai
       setStatus('ready')
     } catch (err) {
       console.error('Error fetching blockchain data:', err)
-      setError(err instanceof Error ? err.message : 'Unknown error')
+      setError(getErrorMessage(err))
       setStatus('error')
       setNativeBalance('0')
     }

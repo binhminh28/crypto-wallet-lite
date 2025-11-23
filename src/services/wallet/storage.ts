@@ -1,5 +1,5 @@
 import { openDB, type IDBPDatabase } from 'idb'
-import type { WalletAccount } from '../types'
+import type { WalletAccount } from '../../types'
 
 const DB_NAME = 'crypto-wallet-db'
 const DB_VERSION = 1
@@ -9,7 +9,7 @@ let dbInstance: IDBPDatabase | null = null
 
 async function getDB() {
   if (dbInstance) return dbInstance
-  
+
   dbInstance = await openDB(DB_NAME, DB_VERSION, {
     upgrade(db) {
       if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -17,7 +17,7 @@ async function getDB() {
       }
     },
   })
-  
+
   return dbInstance
 }
 
@@ -29,7 +29,9 @@ export async function saveWallet(wallet: WalletAccount): Promise<void> {
 export async function getAllWallets(): Promise<WalletAccount[]> {
   const db = await getDB()
   const wallets = await db.getAll(STORE_NAME)
-  return wallets.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  return wallets.sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
 }
 
 export async function getWalletById(id: string): Promise<WalletAccount | undefined> {

@@ -11,8 +11,6 @@ type ActivityFeedProps = {
 const statusMap: Record<Activity['status'], { label: string; color: string }> = {
   sent: { label: 'Sent', color: 'text-pink-300' },
   received: { label: 'Received', color: 'text-emerald-300' },
-  learn: { label: 'Learning', color: 'text-cyan-200' },
-  faucet: { label: 'Faucet', color: 'text-blue-200' },
 }
 
 export function ActivityFeed({ activity, network, loading, onViewDetails, onRefresh }: ActivityFeedProps) {
@@ -38,7 +36,7 @@ export function ActivityFeed({ activity, network, loading, onViewDetails, onRefr
       ) : activity.length === 0 ? (
         <div className="mt-4 text-center text-slate">Chưa có giao dịch nào</div>
       ) : (
-        <div className="mt-4 space-y-4 overflow-y-auto flex-1">
+        <div className="mt-4 space-y-4 overflow-y-auto flex-1 pr-2 min-h-0">
           {activity.map((item) => (
             <article key={item.id} className="rounded-2xl border border-white/5 bg-white/5 p-4">
               <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-slate">

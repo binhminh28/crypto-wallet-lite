@@ -6,16 +6,15 @@ import { NetworkSelector } from './components/sections/NetworkSelector'
 import { PortfolioOverview } from './components/sections/PortfolioOverview'
 import { SendTransactionForm } from './components/sections/SendTransactionForm'
 import { WalletPanel } from './components/sections/WalletPanel'
-import {
-  defaultNetworks,
-} from './data/mockData'
+import { defaultNetworks } from './config/networks'
 import { useActivityFeed } from './hooks/useActivityFeed'
 import { useBlockchainData } from './hooks/useBlockchainData'
 import { useTokenHoldings } from './hooks/useTokenHoldings'
 import { useTransactionHistory } from './hooks/useTransactionHistory'
 import { useWalletManager } from './hooks/useWalletManager'
-import { sendNativeTransaction } from './services/testnet'
-import { calculateTokenUsd } from './services/tokenPrice'
+import { sendNativeTransaction } from './services/blockchain/transaction'
+import { calculateTokenUsd } from './services/token/price'
+import { getErrorMessage } from './lib/errors'
 
 function App() {
   const walletManager = useWalletManager({
@@ -45,7 +44,11 @@ function App() {
   
   const allActivities = useMemo(() => {
     return [...realActivities, ...activity]
-      .sort((a, b) => b.id.localeCompare(a.id))
+      .sort((a, b) => {
+        const timeA = new Date(a.timestamp).getTime()
+        const timeB = new Date(b.timestamp).getTime()
+        return timeB - timeA
+      })
       .slice(0, 10)
   }, [realActivities, activity])
 
@@ -126,7 +129,7 @@ function App() {
       }
     } catch (error) {
       if (submissionIdRef.current === currentSubmissionId) {
-        setTxError(error instanceof Error ? error.message : 'Không gửi được giao dịch')
+        setTxError(getErrorMessage(error))
       }
     } finally {
       if (submissionIdRef.current === currentSubmissionId) {

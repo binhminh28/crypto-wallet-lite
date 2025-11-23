@@ -1,7 +1,15 @@
 import { useEffect, useState } from 'react'
 import type { Network, TransactionDraft, WalletAccount } from '../types'
-import { deleteWallet as deleteWalletFromDB, getAllWallets, updateWallet as updateWalletInDB } from '../services/walletStorage'
-import { createAndSaveWallet, importAndSaveWallet, importAndSaveWalletFromSeedPhrase } from '../services/walletService'
+import {
+  deleteWallet as deleteWalletFromDB,
+  getAllWallets,
+  updateWallet as updateWalletInDB,
+} from '../services/wallet/storage'
+import {
+  createAndSaveWallet,
+  importAndSaveWallet,
+  importAndSaveWalletFromSeedPhrase,
+} from '../services/wallet/wallet'
 
 type WalletManagerOptions = {
   initialWallets: WalletAccount[]

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { formatEther } from 'ethers'
 import type { Activity, Network } from '../types'
-import { getTransactionHistory } from '../services/testnet'
+import { getTransactionHistory, type TransactionHistoryItem } from '../services/blockchain/explorer'
+import { getErrorMessage } from '../lib/errors'
 import { shorten } from '../utils/format'
 
 export function useTransactionHistory(network: Network, walletAddress?: string, limit = 10) {
@@ -21,7 +22,7 @@ export function useTransactionHistory(network: Network, walletAddress?: string, 
     try {
       const history = await getTransactionHistory(network, walletAddress, limit)
       
-      const activities: Activity[] = history.map(tx => {
+      const activities: Activity[] = history.map((tx: TransactionHistoryItem) => {
         const valueInEth = formatEther(tx.value || '0')
         const value = parseFloat(valueInEth).toFixed(6)
         
@@ -38,7 +39,7 @@ export function useTransactionHistory(network: Network, walletAddress?: string, 
       
       setActivities(activities)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch transaction history')
+      setError(getErrorMessage(err))
       setActivities([])
     } finally {
       setLoading(false)

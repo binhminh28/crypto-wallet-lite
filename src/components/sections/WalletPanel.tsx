@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { Network, WalletAccount } from '../../types'
 import { copyToClipboard, shortAddress } from '../../utils/format'
-import { WalletInfoModal } from '../WalletInfoModal'
+import { WalletInfoModal } from '../shared/WalletInfoModal'
 
 type WalletPanelProps = {
   wallets: WalletAccount[]

@@ -1,6 +1,10 @@
 import { useEffect, useState, useMemo } from 'react'
 import type { Network, Token } from '../types'
-import { getTokenHoldings } from '../services/testnet'
+import { getErrorMessage } from '../lib/errors'
+
+async function getTokenHoldings(_network: Network, _walletAddress?: string): Promise<Token[]> {
+  return []
+}
 
 export function useTokenHoldings(network: Network, walletAddress?: string, nativeBalance?: string | null) {
   const [tokens, setTokens] = useState<Token[]>([])
@@ -26,7 +30,7 @@ export function useTokenHoldings(network: Network, walletAddress?: string, nativ
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch tokens')
+          setError(getErrorMessage(err))
           setTokens([])
         }
       } finally {
