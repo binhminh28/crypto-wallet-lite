@@ -9,7 +9,6 @@ type PortfolioOverviewProps = {
 }
 
 export function PortfolioOverview({ tokens, network, loading }: PortfolioOverviewProps) {
-  // Tính total USD từ tất cả tokens
   const totalUsd = useMemo(() => {
     return tokens.reduce((sum, token) => {
       const usd = calculateTokenUsd(token, network)

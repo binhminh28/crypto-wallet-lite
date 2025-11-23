@@ -35,7 +35,6 @@ export function SendTransactionForm({
 }: SendTransactionFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
   
-  // Tính số tiền có thể gửi tối đa (số dư, vì số dư đã là tổng có thể gửi)
   const calculateMaxSendable = () => {
     if (!nativeBalance) return null
     const balance = parseFloat(nativeBalance)
@@ -43,7 +42,6 @@ export function SendTransactionForm({
     return balance > 0 ? balance.toFixed(6) : '0'
   }
 
-  // Tính số tiền thực tế người nhận sẽ nhận (tổng - phí gas)
   const calculateActualReceive = () => {
     if (!draft.amount) return null
     const total = parseFloat(draft.amount)
@@ -56,7 +54,6 @@ export function SendTransactionForm({
   const maxSendable = calculateMaxSendable()
   const actualReceive = calculateActualReceive()
 
-  // Re-enable form khi không còn submitting
   useEffect(() => {
     if (!isSubmitting && formRef.current) {
       formRef.current.style.pointerEvents = 'auto'
@@ -75,12 +72,10 @@ export function SendTransactionForm({
     
     if (isSubmitting) return false
     
-    // Disable form ngay lập tức để tránh double submit
     if (formRef.current) {
       formRef.current.style.pointerEvents = 'none'
     }
     
-    // Gọi onSubmit
     onSubmit()
     
     return false
@@ -232,7 +227,6 @@ export function SendTransactionForm({
         type="submit"
         disabled={isSubmitting}
         onClick={(e) => {
-          // Prevent multiple clicks
           if (isSubmitting) {
             e.preventDefault()
             e.stopPropagation()

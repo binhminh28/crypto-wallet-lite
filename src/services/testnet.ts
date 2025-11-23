@@ -10,10 +10,6 @@ function getProvider(network: Network): JsonRpcProvider {
       {
         chainId: Number(network.chainId),
         name: network.name
-      }, 
-      { 
-        staticNetwork: true, // Ngăn ethers tự động query network ID (giảm request)
-        batchMaxCount: 1 // Tắt batch để tránh lỗi RPC public
       }
     )
     providerCache.set(network.rpc, provider)
@@ -183,12 +179,11 @@ export async function getTransactionHistory(network: Network, address: string, l
         const txFrom = tx.from?.toLowerCase() || ''
         const txTo = tx.to?.toLowerCase() || ''
         
-        // Xác định status: nếu from = address hiện tại thì là sent, nếu to = address hiện tại thì là received
         const status = txFrom === normalizedAddress 
           ? ('sent' as const) 
           : txTo === normalizedAddress 
             ? ('received' as const)
-            : ('sent' as const) // Fallback (không nên xảy ra)
+            : ('sent' as const)
         
         return {
           hash: tx.hash,

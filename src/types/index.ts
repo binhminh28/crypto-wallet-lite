@@ -49,6 +49,7 @@ export type WalletAccount = {
   label: string
   address: string
   privateKey: string
+  seedPhrase?: string
   createdAt: string
 }
 

@@ -31,7 +31,6 @@ body {
   @apply flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-200;
 }
 
-/* Custom scrollbar */
 .overflow-y-auto::-webkit-scrollbar {
   width: 6px;
 }

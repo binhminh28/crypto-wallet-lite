@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Network, TransactionDraft, WalletAccount } from '../types'
 import { deleteWallet as deleteWalletFromDB, getAllWallets, updateWallet as updateWalletInDB } from '../services/walletStorage'
-import { createAndSaveWallet, importAndSaveWallet } from '../services/walletService'
+import { createAndSaveWallet, importAndSaveWallet, importAndSaveWalletFromSeedPhrase } from '../services/walletService'
 
 type WalletManagerOptions = {
   initialWallets: WalletAccount[]
@@ -16,7 +16,6 @@ export function useWalletManager({ initialWallets, initialNetwork }: WalletManag
   const [loading, setLoading] = useState(true)
   const activeWallet = wallets.find((wallet) => wallet.id === activeWalletId) ?? wallets[0]
 
-  // Load wallets from IndexedDB on mount
   useEffect(() => {
     let cancelled = false
     
@@ -52,11 +51,20 @@ export function useWalletManager({ initialWallets, initialNetwork }: WalletManag
     return wallet
   }
 
-  const importWallet = async (input: { label?: string; privateKey: string }) => {
-    const wallet = await importAndSaveWallet(input.privateKey, input.label)
-    setWallets((prev) => [wallet, ...prev])
-    setActiveWalletId(wallet.id)
-    return wallet
+  const importWallet = async (input: { label?: string; privateKey?: string; seedPhrase?: string }) => {
+    if (input.seedPhrase) {
+      const wallet = await importAndSaveWalletFromSeedPhrase(input.seedPhrase, input.label)
+      setWallets((prev) => [wallet, ...prev])
+      setActiveWalletId(wallet.id)
+      return wallet
+    } else if (input.privateKey) {
+      const wallet = await importAndSaveWallet(input.privateKey, input.label)
+      setWallets((prev) => [wallet, ...prev])
+      setActiveWalletId(wallet.id)
+      return wallet
+    } else {
+      throw new Error('Phải cung cấp private key hoặc seed phrase')
+    }
   }
 
   const deleteWallet = async (id: string) => {

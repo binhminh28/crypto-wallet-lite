@@ -2,13 +2,14 @@ import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import type { Network, WalletAccount } from '../../types'
 import { copyToClipboard, shortAddress } from '../../utils/format'
+import { WalletInfoModal } from '../WalletInfoModal'
 
 type WalletPanelProps = {
   wallets: WalletAccount[]
   activeWallet?: WalletAccount
   onSwitch: (walletId: string) => void
   onCreate: (label?: string) => Promise<WalletAccount>
-  onImport: (input: { label?: string; privateKey: string }) => Promise<WalletAccount>
+  onImport: (input: { label?: string; privateKey?: string; seedPhrase?: string }) => Promise<WalletAccount>
   onDelete: (id: string) => Promise<void>
   onUpdate: (wallet: WalletAccount) => Promise<void>
   nativeBalance?: string | null
@@ -33,15 +34,21 @@ export function WalletPanel({
   const [importKey, setImportKey] = useState('')
   const [label, setLabel] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [importType, setImportType] = useState<'privateKey' | 'seedPhrase'>('privateKey')
   const [editingWallet, setEditingWallet] = useState<WalletAccount | null>(null)
   const [editLabel, setEditLabel] = useState('')
   const [showQR, setShowQR] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
+  const [newWallet, setNewWallet] = useState<WalletAccount | null>(null)
 
   const handleImport = async () => {
     if (!importKey) return
     try {
-      await onImport({ label, privateKey: importKey })
+      if (importType === 'seedPhrase') {
+        await onImport({ label, seedPhrase: importKey })
+      } else {
+        await onImport({ label, privateKey: importKey })
+      }
       setImportKey('')
       setLabel('')
       setShowImport(false)
@@ -52,7 +59,8 @@ export function WalletPanel({
 
   const handleCreate = async () => {
     try {
-      await onCreate()
+      const wallet = await onCreate()
+      setNewWallet(wallet)
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Tạo ví thất bại')
     }
@@ -98,9 +106,16 @@ export function WalletPanel({
   }
 
   return (
-    <div className="glass-panel p-6">
-      <p className="section-title">Ví của bạn</p>
-      <div className="mt-4 space-y-4">
+    <>
+      {newWallet && (
+        <WalletInfoModal
+          wallet={newWallet}
+          onClose={() => setNewWallet(null)}
+        />
+      )}
+      <div className="glass-panel p-6">
+        <p className="section-title">Ví của bạn</p>
+        <div className="mt-4 space-y-4">
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-cyan-200">Đang dùng</p>
           <p className="mt-1 text-lg font-semibold text-white">{activeWallet?.label}</p>
@@ -164,7 +179,39 @@ export function WalletPanel({
           </button>
           {showImport && (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
-              <p className="text-xs uppercase tracking-[0.3em] text-slate mb-2">Import private key</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-slate mb-3">Import ví</p>
+              
+              <div className="mb-3 flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="importType"
+                    value="privateKey"
+                    checked={importType === 'privateKey'}
+                    onChange={() => {
+                      setImportType('privateKey')
+                      setImportKey('')
+                    }}
+                    className="w-4 h-4 text-cyan-500 bg-black/30 border-white/10 focus:ring-cyan-500"
+                  />
+                  <span className="text-slate text-xs">Private Key</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="importType"
+                    value="seedPhrase"
+                    checked={importType === 'seedPhrase'}
+                    onChange={() => {
+                      setImportType('seedPhrase')
+                      setImportKey('')
+                    }}
+                    className="w-4 h-4 text-cyan-500 bg-black/30 border-white/10 focus:ring-cyan-500"
+                  />
+                  <span className="text-slate text-xs">Seed Phrase</span>
+                </label>
+              </div>
+
               <div className="flex flex-col gap-2">
                 <input
                   type="text"
@@ -173,13 +220,23 @@ export function WalletPanel({
                   onChange={(event) => setLabel(event.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white placeholder:text-slate"
                 />
-                <input
-                  type="password"
-                  placeholder="0x..."
-                  value={importKey}
-                  onChange={(event) => setImportKey(event.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white placeholder:text-slate"
-                />
+                {importType === 'seedPhrase' ? (
+                  <textarea
+                    placeholder="Nhập seed phrase (12 hoặc 24 từ)..."
+                    value={importKey}
+                    onChange={(event) => setImportKey(event.target.value)}
+                    rows={3}
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white placeholder:text-slate resize-none"
+                  />
+                ) : (
+                  <input
+                    type="password"
+                    placeholder="0x..."
+                    value={importKey}
+                    onChange={(event) => setImportKey(event.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white placeholder:text-slate"
+                  />
+                )}
                 <button
                   type="button"
                   disabled={!importKey}
@@ -271,8 +328,9 @@ export function WalletPanel({
             </div>
           )}
         </div>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
