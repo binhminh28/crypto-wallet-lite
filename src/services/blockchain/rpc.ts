@@ -11,10 +11,10 @@ export function getProvider(network: Network): JsonRpcProvider {
         chainId: Number(network.chainId),
         name: network.name,
       },
-      {
-        staticNetwork: true,
-        batchMaxCount: 1,
-      }
+      // {
+      //   staticNetwork: true,
+      //   batchMaxCount: 1,
+      // }
     )
     providerCache.set(network.rpc, provider)
   }

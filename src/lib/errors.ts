@@ -72,7 +72,7 @@ export function getErrorMessage(error: unknown): string {
   }
   
   if (error instanceof RpcError) {
-    if (error.code === 429 || error.message.toLowerCase().includes('429') || error.message.toLowerCase().includes('too many requests')) {
+    if (error.code === 429) {
       return 'RPC đang bận (429). Vui lòng đợi 30s rồi thử lại.'
     }
     if (error.message.toLowerCase().includes('insufficient funds')) {
