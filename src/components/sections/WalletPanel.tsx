@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { FaCopy, FaExternalLinkAlt, FaQrcode, FaEdit, FaTrash, FaCheck } from 'react-icons/fa'
 import type { Network, WalletAccount } from '../../types'
 import { copyToClipboard, shortAddress } from '../../utils/format'
 import { WalletInfoModal } from '../shared/WalletInfoModal'
@@ -127,7 +128,7 @@ export function WalletPanel({
                 className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate hover:bg-white/10 hover:text-white transition"
                 title="Copy địa chỉ"
               >
-                {copySuccess ? '✓' : '📋'}
+                {copySuccess ? <FaCheck /> : <FaCopy />}
               </button>
               <a
                 href={`${network.explorer}/address/${activeWallet.address}`}
@@ -136,14 +137,14 @@ export function WalletPanel({
                 className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate hover:bg-white/10 hover:text-white transition"
                 title="Xem trên Explorer"
               >
-                🔗
+                <FaExternalLinkAlt />
               </a>
               <button
                 onClick={() => setShowQR(!showQR)}
                 className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate hover:bg-white/10 hover:text-white transition"
                 title="Hiển thị QR Code"
               >
-                📱
+                <FaQrcode />
               </button>
             </div>
           )}
@@ -153,9 +154,9 @@ export function WalletPanel({
               <p className="text-xs font-mono text-slate break-all text-center">{activeWallet.address}</p>
               <button
                 onClick={handleCopyAddress}
-                className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-slate hover:text-white transition"
+                className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-slate hover:text-white transition flex items-center gap-2"
               >
-                {copySuccess ? '✓ Đã copy!' : '📋 Copy địa chỉ'}
+                {copySuccess ? <><FaCheck /> Đã copy!</> : <><FaCopy /> Copy địa chỉ</>}
               </button>
             </div>
           )}
@@ -175,7 +176,7 @@ export function WalletPanel({
             className="rounded-2xl border border-white/10 px-4 py-3 font-semibold text-slate transition hover:text-white hover:border-white/20"
             onClick={() => setShowImport(!showImport)}
           >
-            {showImport ? '✕ Đóng' : '⬆ Import ví'}
+            {showImport ? 'Đóng' : 'Import ví'}
           </button>
           {showImport && (
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm">
@@ -310,14 +311,14 @@ export function WalletPanel({
                             className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate hover:bg-white/10 hover:text-white"
                             title="Chỉnh sửa tên"
                           >
-                            ✏️
+                            <FaEdit />
                           </button>
                           <button
                             onClick={() => handleDelete(wallet.id)}
                             className="rounded-lg bg-red-500/20 px-2 py-1 text-xs text-red-300 hover:bg-red-500/30"
                             title="Xóa ví"
                           >
-                            🗑️
+                            <FaTrash />
                           </button>
                         </div>
                       </div>

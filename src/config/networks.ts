@@ -5,7 +5,7 @@ export const defaultNetworks: Network[] = [
     id: 'eth-sepolia',
     name: 'Ethereum Sepolia',
     chainId: '11155111',
-    rpc: import.meta.env.VITE_RPC_SEPOLIA || 'https://sepolia.gateway.tenderly.co',
+    rpc: 'https://eth-sepolia.g.alchemy.com/v2/JHMPq2BwZMBC983UnVbyF',
     explorer: 'https://sepolia.etherscan.io',
     badge: 'ETH',
   },

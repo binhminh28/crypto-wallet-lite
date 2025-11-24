@@ -1,3 +1,4 @@
+import { FaSync, FaClock, FaFileAlt, FaExternalLinkAlt } from 'react-icons/fa'
 import type { Activity, Network } from '../../types'
 
 type ActivityFeedProps = {
@@ -27,7 +28,7 @@ export function ActivityFeed({ activity, network, loading, onViewDetails, onRefr
             className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate hover:bg-white/10 hover:text-white transition disabled:opacity-50"
             title="Làm mới"
           >
-            {loading ? '⏳' : '🔄'}
+            {loading ? <span className="inline-block animate-spin"><FaClock /></span> : <FaSync />}
           </button>
         )}
       </div>
@@ -52,17 +53,17 @@ export function ActivityFeed({ activity, network, loading, onViewDetails, onRefr
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => onViewDetails?.(item)}
-                      className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate hover:bg-white/10 hover:text-white transition"
+                      className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate hover:bg-white/10 hover:text-white transition flex items-center gap-1"
                     >
-                      📄 Chi tiết
+                      <FaFileAlt /> Chi tiết
                     </button>
                     <a
                       href={`${network.explorer}/tx/${item.id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate hover:bg-white/10 hover:text-white transition"
+                      className="rounded-lg bg-white/5 px-3 py-1.5 text-xs text-slate hover:bg-white/10 hover:text-white transition flex items-center gap-1"
                     >
-                      🔗 Explorer
+                      <FaExternalLinkAlt /> Explorer
                     </a>
                   </div>
                 )}

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { FaTimes, FaCopy, FaExternalLinkAlt } from 'react-icons/fa'
 import type { Activity, Network } from '../../types'
 import { copyToClipboard } from '../../utils/format'
 
@@ -37,9 +38,9 @@ export function TransactionDetailsModal({ activity, network, onClose }: Transact
           <p className="section-title">Chi tiết giao dịch</p>
           <button
             onClick={onClose}
-            className="rounded-lg bg-white/5 px-3 py-1.5 text-slate hover:bg-white/10 hover:text-white transition"
+            className="rounded-lg bg-white/5 px-3 py-1.5 text-slate hover:bg-white/10 hover:text-white transition flex items-center gap-1"
           >
-            ✕ Đóng
+            <FaTimes /> Đóng
           </button>
         </div>
 
@@ -53,7 +54,7 @@ export function TransactionDetailsModal({ activity, network, onClose }: Transact
                 className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate hover:bg-white/10 hover:text-white transition"
                 title="Copy"
               >
-                📋
+                <FaCopy />
               </button>
               <a
                 href={`${network.explorer}/tx/${activity.id}`}
@@ -62,7 +63,7 @@ export function TransactionDetailsModal({ activity, network, onClose }: Transact
                 className="rounded-lg bg-white/5 px-2 py-1 text-xs text-slate hover:bg-white/10 hover:text-white transition"
                 title="Xem trên Explorer"
               >
-                🔗
+                <FaExternalLinkAlt />
               </a>
             </div>
           </div>
@@ -89,9 +90,9 @@ export function TransactionDetailsModal({ activity, network, onClose }: Transact
               href={`${network.explorer}/tx/${activity.id}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:opacity-90"
+              className="flex-1 rounded-2xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-4 py-3 text-center text-sm font-semibold text-white transition hover:opacity-90 flex items-center justify-center gap-2"
             >
-              🔗 Xem trên Explorer
+              <FaExternalLinkAlt /> Xem trên Explorer
             </a>
             <button
               onClick={onClose}

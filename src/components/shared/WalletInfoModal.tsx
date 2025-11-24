@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
+import { FaTimes, FaExclamationTriangle, FaCopy, FaCheck, FaEye, FaEyeSlash } from 'react-icons/fa'
 import type { WalletAccount } from '../../types'
 import { copyToClipboard } from '../../utils/format'
 
@@ -39,15 +40,15 @@ export function WalletInfoModal({ wallet, onClose }: WalletInfoModalProps) {
           <h2 className="text-xl font-semibold text-white">Thông tin ví mới</h2>
           <button
             onClick={onClose}
-            className="rounded-lg bg-white/10 px-3 py-1 text-sm text-slate hover:bg-white/20 hover:text-white transition"
+            className="rounded-lg bg-white/10 px-3 py-1 text-sm text-slate hover:bg-white/20 hover:text-white transition flex items-center gap-2"
           >
-            ✕ Đóng
+            <FaTimes /> Đóng
           </button>
         </div>
 
         <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4">
           <div className="flex items-start gap-3">
-            <span className="text-2xl">⚠️</span>
+            <span className="text-2xl text-red-300 flex-shrink-0 mt-0.5"><FaExclamationTriangle /></span>
             <div className="flex-1">
               <p className="font-semibold text-red-300 mb-1">Cảnh báo bảo mật</p>
               <p className="text-sm text-red-200/80">
@@ -69,10 +70,10 @@ export function WalletInfoModal({ wallet, onClose }: WalletInfoModalProps) {
               </p>
               <button
                 onClick={() => handleCopy(wallet.address, 'address')}
-                className="rounded-lg bg-white/10 px-3 py-2 text-xs text-slate hover:bg-white/20 hover:text-white transition whitespace-nowrap"
+                className="rounded-lg bg-white/10 px-3 py-2 text-xs text-slate hover:bg-white/20 hover:text-white transition whitespace-nowrap flex items-center gap-1"
                 title="Copy địa chỉ"
               >
-                {copySuccess.address ? '✓ Đã copy' : '📋 Copy'}
+                {copySuccess.address ? <><FaCheck /> Đã copy</> : <><FaCopy /> Copy</>}
               </button>
             </div>
           </div>
@@ -84,16 +85,16 @@ export function WalletInfoModal({ wallet, onClose }: WalletInfoModalProps) {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowPrivateKey(!showPrivateKey)}
-                className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition"
+                className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition flex items-center gap-1"
               >
-                {showPrivateKey ? '👁️ Ẩn' : '👁️‍🗨️ Hiện'}
+                {showPrivateKey ? <><FaEyeSlash /> Ẩn</> : <><FaEye /> Hiện</>}
               </button>
               <button
                 onClick={() => handleCopy(wallet.privateKey, 'privateKey')}
-                className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition"
+                className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition flex items-center gap-1"
                 title="Copy private key"
               >
-                {copySuccess.privateKey ? '✓ Đã copy' : '📋 Copy'}
+                {copySuccess.privateKey ? <><FaCheck /> Đã copy</> : <><FaCopy /> Copy</>}
               </button>
             </div>
           </div>
@@ -111,16 +112,16 @@ export function WalletInfoModal({ wallet, onClose }: WalletInfoModalProps) {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowSeedPhrase(!showSeedPhrase)}
-                  className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition"
+                  className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition flex items-center gap-1"
                 >
-                  {showSeedPhrase ? '👁️ Ẩn' : '👁️‍🗨️ Hiện'}
+                  {showSeedPhrase ? <><FaEyeSlash /> Ẩn</> : <><FaEye /> Hiện</>}
                 </button>
                 <button
                   onClick={() => handleCopy(wallet.seedPhrase!, 'seedPhrase')}
-                  className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition"
+                  className="rounded-lg bg-white/10 px-3 py-1 text-xs text-slate hover:bg-white/20 hover:text-white transition flex items-center gap-1"
                   title="Copy seed phrase"
                 >
-                  {copySuccess.seedPhrase ? '✓ Đã copy' : '📋 Copy'}
+                  {copySuccess.seedPhrase ? <><FaCheck /> Đã copy</> : <><FaCopy /> Copy</>}
                 </button>
               </div>
             </div>

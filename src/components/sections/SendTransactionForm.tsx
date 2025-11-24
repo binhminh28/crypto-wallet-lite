@@ -1,3 +1,4 @@
+import { FaTimesCircle, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa'
 import type { Network, TransactionDraft, WalletAccount } from '../../types'
 import React, { useEffect, useRef } from 'react'
 
@@ -174,7 +175,7 @@ export function SendTransactionForm({
       {error ? (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           <div className="flex items-center gap-2">
-            <span>❌</span>
+            <span className="flex-shrink-0"><FaTimesCircle /></span>
             <span className="flex-1">{error}</span>
           </div>
         </div>
@@ -187,7 +188,7 @@ export function SendTransactionForm({
             : 'border-red-500/30 bg-red-500/10 text-red-200'
         }`}>
           <div className="flex items-start gap-2">
-            <span>{transactionResult.status === 'success' ? '✅' : '❌'}</span>
+            <span className="flex-shrink-0 mt-0.5">{transactionResult.status === 'success' ? <FaCheckCircle /> : <FaTimesCircle />}</span>
             <div className="flex-1">
               <p className="font-semibold mb-1">
                 {transactionResult.status === 'success' 
@@ -219,8 +220,9 @@ export function SendTransactionForm({
       )}
       
       {!error && !transactionResult && (
-        <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-xs text-yellow-200">
-          ⚠️ Giao dịch sẽ được gửi thật lên {network.name} testnet
+        <div className="rounded-2xl border border-yellow-500/30 bg-yellow-500/10 px-4 py-2 text-xs text-yellow-200 flex items-center gap-2">
+          <span className="flex-shrink-0"><FaExclamationTriangle /></span>
+          <span>Giao dịch sẽ được gửi thật lên {network.name} testnet</span>
         </div>
       )}
       <button
