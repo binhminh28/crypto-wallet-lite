@@ -27,8 +27,7 @@ export type WalletAccount = {
   id: string
   label: string
   address: string
-  privateKey: string
-  seedPhrase?: string
+  encryptedJson: string
   createdAt: string
 }
 
@@ -36,5 +35,11 @@ export type TransactionDraft = {
   to: string
   amount: string
   note: string
+}
+
+export type WalletSecrets = {
+  address: string
+  privateKey: string
+  seedPhrase?: string
 }
 

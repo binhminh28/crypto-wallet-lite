@@ -1,22 +1,21 @@
 import { useEffect, useState } from 'react'
-import type { Network, TransactionDraft, WalletAccount } from '../types'
+import type { Network, TransactionDraft, WalletAccount, WalletSecrets } from '../types'
 import {
   deleteWallet as deleteWalletFromDB,
   getAllWallets,
   updateWallet as updateWalletInDB,
 } from '../services/wallet/storage'
-import {
-  createAndSaveWallet,
-  importAndSaveWallet,
-  importAndSaveWalletFromSeedPhrase,
-} from '../services/wallet/wallet'
+import { PRIVATE_KEY } from '../config/constants'
+import { Wallet } from 'ethers'
+import { saveWallet } from '../services/wallet/storage'
 
 type WalletManagerOptions = {
   initialWallets: WalletAccount[]
   initialNetwork: Network
+  sessionPassword: string | null
 }
 
-export function useWalletManager({ initialWallets, initialNetwork }: WalletManagerOptions) {
+export function useWalletManager({ initialWallets, initialNetwork, sessionPassword }: WalletManagerOptions) {
   const [wallets, setWallets] = useState<WalletAccount[]>(initialWallets)
   const [activeWalletId, setActiveWalletId] = useState(initialWallets[0]?.id ?? '')
   const [selectedNetwork, setSelectedNetwork] = useState<Network>(initialNetwork)
@@ -52,27 +51,79 @@ export function useWalletManager({ initialWallets, initialNetwork }: WalletManag
     }
   }, [])
 
-  const createWallet = async (label?: string) => {
-    const wallet = await createAndSaveWallet(label || `Ví mới ${wallets.length + 1}`)
-    setWallets((prev) => [wallet, ...prev])
-    setActiveWalletId(wallet.id)
-    return wallet
+  const createWallet = async (label?: string): Promise<WalletSecrets> => {
+    if (!sessionPassword) {
+      throw new Error('Bạn cần nhập master password trước khi tạo ví')
+    }
+
+    const wallet = Wallet.createRandom()
+    const encryptedJson = await wallet.encrypt(sessionPassword)
+
+    const walletRecord: WalletAccount = {
+      id: crypto.randomUUID(),
+      label: label || `Ví mới ${wallets.length + 1}`,
+      address: wallet.address,
+      encryptedJson,
+      createdAt: new Date().toISOString(),
+    }
+
+    await saveWallet(walletRecord)
+    setWallets((prev) => [walletRecord, ...prev])
+    setActiveWalletId(walletRecord.id)
+
+    const seedPhrase = wallet.mnemonic?.phrase || undefined
+    const secrets: WalletSecrets = {
+      address: wallet.address,
+      privateKey: wallet.privateKey,
+      seedPhrase,
+    }
+
+    return secrets
   }
 
-  const importWallet = async (input: { label?: string; privateKey?: string; seedPhrase?: string }) => {
+  const importWallet = async (input: { label?: string; privateKey?: string; seedPhrase?: string }): Promise<WalletSecrets> => {
+    if (!sessionPassword) {
+      throw new Error('Bạn cần nhập master password trước khi import ví')
+    }
+
+    let wallet: Wallet
+    let seedPhrase: string | undefined
+
     if (input.seedPhrase) {
-      const wallet = await importAndSaveWalletFromSeedPhrase(input.seedPhrase, input.label)
-      setWallets((prev) => [wallet, ...prev])
-      setActiveWalletId(wallet.id)
-      return wallet
+      const normalizedSeedPhrase = input.seedPhrase.trim().replace(/\s+/g, ' ')
+      wallet = Wallet.fromPhrase(normalizedSeedPhrase)
+      seedPhrase = normalizedSeedPhrase
     } else if (input.privateKey) {
-      const wallet = await importAndSaveWallet(input.privateKey, input.label)
-      setWallets((prev) => [wallet, ...prev])
-      setActiveWalletId(wallet.id)
-      return wallet
+      let normalizedPrivateKey = input.privateKey.trim()
+      if (!normalizedPrivateKey.startsWith(PRIVATE_KEY.PREFIX)) {
+        normalizedPrivateKey = PRIVATE_KEY.PREFIX + normalizedPrivateKey
+      }
+      wallet = new Wallet(normalizedPrivateKey)
     } else {
       throw new Error('Phải cung cấp private key hoặc seed phrase')
     }
+
+    const encryptedJson = await wallet.encrypt(sessionPassword)
+
+    const walletRecord: WalletAccount = {
+      id: crypto.randomUUID(),
+      label: input.label || `Imported wallet ${Date.now()}`,
+      address: wallet.address,
+      encryptedJson,
+      createdAt: new Date().toISOString(),
+    }
+
+    await saveWallet(walletRecord)
+    setWallets((prev) => [walletRecord, ...prev])
+    setActiveWalletId(walletRecord.id)
+
+    const secrets: WalletSecrets = {
+      address: wallet.address,
+      privateKey: wallet.privateKey,
+      seedPhrase,
+    }
+
+    return secrets
   }
 
   const deleteWallet = async (id: string) => {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { FaCopy, FaExternalLinkAlt, FaQrcode, FaEdit, FaTrash, FaCheck } from 'react-icons/fa'
-import type { Network, WalletAccount } from '../../types'
+import type { Network, WalletAccount, WalletSecrets } from '../../types'
 import { copyToClipboard, shortAddress } from '../../utils/format'
 import { WalletInfoModal } from '../shared/WalletInfoModal'
 
@@ -9,8 +9,8 @@ type WalletPanelProps = {
   wallets: WalletAccount[]
   activeWallet?: WalletAccount
   onSwitch: (walletId: string) => void
-  onCreate: (label?: string) => Promise<WalletAccount>
-  onImport: (input: { label?: string; privateKey?: string; seedPhrase?: string }) => Promise<WalletAccount>
+  onCreate: (label?: string) => Promise<WalletSecrets>
+  onImport: (input: { label?: string; privateKey?: string; seedPhrase?: string }) => Promise<WalletSecrets>
   onDelete: (id: string) => Promise<void>
   onUpdate: (wallet: WalletAccount) => Promise<void>
   nativeBalance?: string | null
@@ -40,7 +40,7 @@ export function WalletPanel({
   const [editLabel, setEditLabel] = useState('')
   const [showQR, setShowQR] = useState(false)
   const [copySuccess, setCopySuccess] = useState(false)
-  const [newWallet, setNewWallet] = useState<WalletAccount | null>(null)
+  const [newWallet, setNewWallet] = useState<WalletSecrets | null>(null)
 
   const handleImport = async () => {
     if (!importKey) return

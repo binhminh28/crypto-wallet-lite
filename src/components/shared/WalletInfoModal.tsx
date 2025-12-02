@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { FaTimes, FaExclamationTriangle, FaCopy, FaCheck, FaEye, FaEyeSlash } from 'react-icons/fa'
-import type { WalletAccount } from '../../types'
+import type { WalletSecrets } from '../../types'
 import { copyToClipboard } from '../../utils/format'
 
 type WalletInfoModalProps = {
-  wallet: WalletAccount
+  wallet: WalletSecrets
   onClose: () => void
 }
 
