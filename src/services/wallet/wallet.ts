@@ -1,24 +1,20 @@
 import { Wallet } from 'ethers'
-import type { WalletAccount } from '../../types'
+import type { WalletSecrets } from '../../types'
 import { WalletError, ValidationError } from '../../lib/errors'
 import { PRIVATE_KEY, SEED_PHRASE } from '../../config/constants'
-import { saveWallet } from './storage'
 
-export function createNewWallet(label?: string): WalletAccount {
+export function createNewWallet(): WalletSecrets {
   try {
     const wallet = Wallet.createRandom()
     const seedPhrase = wallet.mnemonic?.phrase || undefined
 
-    const walletAccount: WalletAccount = {
-      id: crypto.randomUUID(),
-      label: label || `Ví mới ${Date.now()}`,
+    const walletSecrets: WalletSecrets = {
       address: wallet.address,
       privateKey: wallet.privateKey,
-      seedPhrase: seedPhrase,
-      createdAt: new Date().toISOString(),
+      seedPhrase,
     }
 
-    return walletAccount
+    return walletSecrets
   } catch (error) {
     throw new WalletError(
       `Không thể tạo ví mới: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -29,7 +25,7 @@ export function createNewWallet(label?: string): WalletAccount {
 export function importWalletFromPrivateKey(
   privateKey: string,
   label?: string
-): WalletAccount {
+): WalletSecrets {
   if (!privateKey || privateKey.trim() === '') {
     throw new ValidationError('Private key không được để trống', 'privateKey')
   }
@@ -49,15 +45,12 @@ export function importWalletFromPrivateKey(
   try {
     const wallet = new Wallet(normalizedPrivateKey)
 
-    const walletAccount: WalletAccount = {
-      id: crypto.randomUUID(),
-      label: label || `Imported wallet ${Date.now()}`,
+    const walletSecrets: WalletSecrets = {
       address: wallet.address,
       privateKey: normalizedPrivateKey,
-      createdAt: new Date().toISOString(),
     }
 
-    return walletAccount
+    return walletSecrets
   } catch (error) {
     if (error instanceof Error) {
       if (
@@ -75,7 +68,7 @@ export function importWalletFromPrivateKey(
 export function importWalletFromSeedPhrase(
   seedPhrase: string,
   label?: string
-): WalletAccount {
+): WalletSecrets {
   if (!seedPhrase || seedPhrase.trim() === '') {
     throw new ValidationError('Seed phrase không được để trống', 'seedPhrase')
   }
@@ -93,16 +86,13 @@ export function importWalletFromSeedPhrase(
   try {
     const wallet = Wallet.fromPhrase(normalizedSeedPhrase)
 
-    const walletAccount: WalletAccount = {
-      id: crypto.randomUUID(),
-      label: label || `Imported wallet ${Date.now()}`,
+    const walletSecrets: WalletSecrets = {
       address: wallet.address,
       privateKey: wallet.privateKey,
       seedPhrase: normalizedSeedPhrase,
-      createdAt: new Date().toISOString(),
     }
 
-    return walletAccount
+    return walletSecrets
   } catch (error) {
     if (error instanceof Error) {
       if (
@@ -163,28 +153,3 @@ export function validateSeedPhrase(seedPhrase: string): boolean {
     return false
   }
 }
-
-export async function createAndSaveWallet(label?: string): Promise<WalletAccount> {
-  const wallet = createNewWallet(label)
-  await saveWallet(wallet)
-  return wallet
-}
-
-export async function importAndSaveWallet(
-  privateKey: string,
-  label?: string
-): Promise<WalletAccount> {
-  const wallet = importWalletFromPrivateKey(privateKey, label)
-  await saveWallet(wallet)
-  return wallet
-}
-
-export async function importAndSaveWalletFromSeedPhrase(
-  seedPhrase: string,
-  label?: string
-): Promise<WalletAccount> {
-  const wallet = importWalletFromSeedPhrase(seedPhrase, label)
-  await saveWallet(wallet)
-  return wallet
-}
-
