@@ -1,15 +1,22 @@
 import csv
 from pathlib import Path
-
 import matplotlib.pyplot as plt
 
-
-DATA_PATH = Path("benchmark_data.csv")
 OUTPUT_DIR = Path("charts")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 
+def find_latest_csv():
+    csv_files = sorted(Path(".").glob("benchmark_*.csv"), reverse=True)
+    if not csv_files:
+        raise SystemExit("Không tìm thấy file CSV benchmark. Hãy chạy benchmark trước.")
+    return csv_files[0]
+
+
 def load_data():
+    data_path = find_latest_csv()
+    print(f"Đang đọc dữ liệu từ: {data_path}")
+    
     iterations = []
     total_ms = []
     network_ms = []
@@ -19,8 +26,12 @@ def load_data():
     gas_dev = []
     rpc_status = []
     etherscan_status = []
+    tx_hash = []
+    etherscan_value = []
+    etherscan_fee = []
+    etherscan_gas_price = []
 
-    with DATA_PATH.open("r", encoding="utf-8") as f:
+    with data_path.open("r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
             iterations.append(int(row["iteration"]))
@@ -32,6 +43,10 @@ def load_data():
             gas_dev.append(float(row["gas_deviation_eth"]))
             rpc_status.append(row["rpc_status"])
             etherscan_status.append(row["etherscan_status"])
+            tx_hash.append(row.get("tx_hash", ""))
+            etherscan_value.append(float(row.get("etherscan_value_eth", "0")))
+            etherscan_fee.append(float(row.get("etherscan_fee_eth", "0")))
+            etherscan_gas_price.append(float(row.get("etherscan_gas_price_gwei", "0")))
 
     return {
         "iterations": iterations,
@@ -43,6 +58,10 @@ def load_data():
         "gas_dev": gas_dev,
         "rpc_status": rpc_status,
         "etherscan_status": etherscan_status,
+        "tx_hash": tx_hash,
+        "etherscan_value": etherscan_value,
+        "etherscan_fee": etherscan_fee,
+        "etherscan_gas_price": etherscan_gas_price,
     }
 
 
@@ -96,14 +115,18 @@ def chart3_line_total(data):
 def chart4_gas_accuracy(data):
     iterations = data["iterations"]
     ui_gas = data["ui_gas"]
+    etherscan_fee = data["etherscan_fee"]
     actual_gas = data["actual_gas"]
+    
+    use_etherscan_fee = any(f > 0 for f in etherscan_fee)
+    gas_data = etherscan_fee if use_etherscan_fee else actual_gas
+    gas_label = "Etherscan Fee" if use_etherscan_fee else "Actual Blockchain Fee"
 
     plt.figure(figsize=(10, 4))
-    # Scatter + line to dễ đọc
     plt.scatter(iterations, ui_gas, color="blue", label="UI Estimated Fee", alpha=0.6)
     plt.plot(iterations, ui_gas, color="blue", alpha=0.4)
-    plt.scatter(iterations, actual_gas, color="red", label="Actual Blockchain Fee", alpha=0.6)
-    plt.plot(iterations, actual_gas, color="red", alpha=0.4)
+    plt.scatter(iterations, gas_data, color="red", label=gas_label, alpha=0.6)
+    plt.plot(iterations, gas_data, color="red", alpha=0.4)
     plt.xlabel("Iteration")
     plt.ylabel("Gas Fee (ETH)")
     plt.title("Gas Estimation Accuracy per Iteration")
@@ -115,7 +138,6 @@ def chart4_gas_accuracy(data):
 
 
 def chart5_rpc_reliability(data):
-    # Sử dụng status từ cả RPC & Etherscan: một tx coi là success nếu cả 2 success
     combined = []
     for r, e in zip(data["rpc_status"], data["etherscan_status"]):
         if r == "success" and e == "success":
@@ -153,9 +175,6 @@ def chart5_rpc_reliability(data):
 
 
 def main():
-    if not DATA_PATH.exists():
-        raise SystemExit(f"Không tìm thấy {DATA_PATH}. Hãy chạy benchmark trước.")
-
     data = load_data()
 
     chart1_stacked_bar(data)
@@ -169,5 +188,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
