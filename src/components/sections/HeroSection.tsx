@@ -17,7 +17,7 @@ export function HeroSection({ totalUsd }: HeroSectionProps) {
               Tạo ví, claim faucet, mô phỏng giao dịch.
             </p>
             <div className="flex flex-wrap gap-3">
-              {['Tạo/Import ví', 'Theo dõi token', 'Gửi giao dịch', 'Faucet helper'].map((pill) => (
+              {['Tạo/Import ví', 'Theo dõi token', 'Gửi giao dịch'].map((pill) => (
                 <span key={pill} className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate">
                   {pill}
                 </span>

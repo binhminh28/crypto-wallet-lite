@@ -6,12 +6,22 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "benchmark": "tsx scripts/benchmark.ts",
+    "visualize": "python scripts/visualize.py"
   },
   "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/node": "^24.10.1",
     "autoprefixer": "^10.4.22",
+    "axios": "^1.13.2",
+    "concurrently": "^9.2.1",
+    "dotenv": "^17.2.3",
+    "playwright": "^1.57.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.14",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "~5.9.3",
     "vite": "^7.2.2"
   },
