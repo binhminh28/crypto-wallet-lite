@@ -101,6 +101,7 @@ export function SendTransactionForm({
           value={draft.to}
           onChange={(event) => onChange({ ...draft, to: event.target.value })}
           className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white placeholder:text-slate"
+          data-testid="send-to-input"
         />
       </label>
       <div className="grid gap-3 md:grid-cols-2">
@@ -125,6 +126,7 @@ export function SendTransactionForm({
             step="0.0001"
             onChange={(event) => onChange({ ...draft, amount: event.target.value })}
             className="w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-white placeholder:text-slate"
+            data-testid="send-amount-input"
           />
         </label>
         <label className="space-y-2 text-sm">
@@ -236,6 +238,7 @@ export function SendTransactionForm({
           }
         }}
         className="rounded-2xl bg-gradient-to-r from-orange-400 to-red-500 px-4 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-glow disabled:opacity-60 disabled:cursor-not-allowed"
+        data-testid="send-transaction-submit"
       >
         {isSubmitting ? 'Đang gửi...' : 'Gửi giao dịch'}
       </button>

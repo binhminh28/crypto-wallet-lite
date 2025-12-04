@@ -175,6 +175,7 @@ export function WalletPanel({
           <button
             className="rounded-2xl border border-white/10 px-4 py-3 font-semibold text-slate transition hover:text-white hover:border-white/20"
             onClick={() => setShowImport(!showImport)}
+            data-testid="toggle-import-wallet"
           >
             {showImport ? 'Đóng' : 'Import ví'}
           </button>
@@ -220,6 +221,7 @@ export function WalletPanel({
                   value={label}
                   onChange={(event) => setLabel(event.target.value)}
                   className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white placeholder:text-slate"
+                  data-testid="import-wallet-label"
                 />
                 {importType === 'seedPhrase' ? (
                   <textarea
@@ -236,6 +238,7 @@ export function WalletPanel({
                     value={importKey}
                     onChange={(event) => setImportKey(event.target.value)}
                     className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white placeholder:text-slate"
+                    data-testid="import-wallet-private-key"
                   />
                 )}
                 <button

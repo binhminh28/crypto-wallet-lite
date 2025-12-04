@@ -37,6 +37,7 @@ export function CreatePasswordScreen({ onCreate }: CreatePasswordScreenProps) {
           <div className="space-y-2">
             <label className="block text-xs uppercase tracking-[0.25em] text-slate">Password</label>
             <input
+              data-testid="create-password-input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -48,6 +49,7 @@ export function CreatePasswordScreen({ onCreate }: CreatePasswordScreenProps) {
           <div className="space-y-2">
             <label className="block text-xs uppercase tracking-[0.25em] text-slate">Nhập lại password</label>
             <input
+              data-testid="confirm-password-input"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -58,6 +60,7 @@ export function CreatePasswordScreen({ onCreate }: CreatePasswordScreenProps) {
           {error && <p className="text-sm text-red-400">{error}</p>}
           <button
             type="submit"
+            data-testid="create-password-submit"
             className="w-full rounded-xl bg-gradient-to-r from-cyan-500/70 to-blue-500/70 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
           >
             Tạo password và tiếp tục

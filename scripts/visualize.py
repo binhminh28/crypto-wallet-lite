@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 import matplotlib.pyplot as plt
+import numpy as np
 
 OUTPUT_DIR = Path("charts")
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -17,82 +18,116 @@ def load_data():
     data_path = find_latest_csv()
     print(f"Đang đọc dữ liệu từ: {data_path}")
     
-    iterations = []
-    total_ms = []
-    network_ms = []
-    client_ms = []
-    ui_gas = []
-    actual_gas = []
-    gas_dev = []
-    rpc_status = []
-    etherscan_status = []
-    tx_hash = []
-    etherscan_value = []
-    etherscan_fee = []
-    etherscan_gas_price = []
+    data = {
+        "iterations": [],
+        "total_ms": [],
+        "network_ms": [],
+        "confirm_ms": [],  # Thay thế client_ms bằng confirm_ms
+        "ui_gas": [],
+        "actual_gas": [],
+        "rpc_status": [],
+        "fee_eth": [],
+        "sender_balance": [],
+        "receiver_balance": []
+    }
 
     with data_path.open("r", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         for row in reader:
-            iterations.append(int(row["iteration"]))
-            total_ms.append(float(row["total_ms"]))
-            network_ms.append(float(row["network_ms"]))
-            client_ms.append(float(row["client_ms"]))
-            ui_gas.append(float(row["ui_gas_eth"]))
-            actual_gas.append(float(row["actual_gas_eth"]))
-            gas_dev.append(float(row["gas_deviation_eth"]))
-            rpc_status.append(row["rpc_status"])
-            etherscan_status.append(row["etherscan_status"])
-            tx_hash.append(row.get("tx_hash", ""))
-            etherscan_value.append(float(row.get("etherscan_value_eth", "0")))
-            etherscan_fee.append(float(row.get("etherscan_fee_eth", "0")))
-            etherscan_gas_price.append(float(row.get("etherscan_gas_price_gwei", "0")))
+            try:
+                data["iterations"].append(int(row["iteration"]))
+                data["total_ms"].append(float(row["total_ms"]))
+                data["network_ms"].append(float(row["network_ms"]))
+                
+                # Cột confirm_ms mới
+                data["confirm_ms"].append(float(row.get("confirm_ms", 0)))
+                
+                # Handle Gas/Fee
+                data["ui_gas"].append(float(row["ui_gas_eth"] or 0))
+                data["actual_gas"].append(float(row["actual_gas_eth"] or 0))
+                data["fee_eth"].append(float(row["fee_eth"] or 0))
+                
+                # Status
+                data["rpc_status"].append(row["rpc_status"])
+                
+                # Balances
+                data["sender_balance"].append(float(row.get("sender_balance_eth", 0) or 0))
+                data["receiver_balance"].append(float(row.get("receiver_balance_eth", 0) or 0))
+            except ValueError as e:
+                print(f"Bỏ qua dòng lỗi: {e}")
+                continue
 
-    return {
-        "iterations": iterations,
-        "total_ms": total_ms,
-        "network_ms": network_ms,
-        "client_ms": client_ms,
-        "ui_gas": ui_gas,
-        "actual_gas": actual_gas,
-        "gas_dev": gas_dev,
-        "rpc_status": rpc_status,
-        "etherscan_status": etherscan_status,
-        "tx_hash": tx_hash,
-        "etherscan_value": etherscan_value,
-        "etherscan_fee": etherscan_fee,
-        "etherscan_gas_price": etherscan_gas_price,
-    }
+    return data
 
 
 def chart1_stacked_bar(data):
     iterations = data["iterations"]
     network_ms = data["network_ms"]
-    client_ms = data["client_ms"]
+    confirm_ms = data["confirm_ms"]
 
     plt.figure(figsize=(10, 6))
-    plt.bar(iterations, client_ms, label="Client time (ms)")
-    plt.bar(iterations, network_ms, bottom=client_ms, label="Network time (ms)")
+    # Network ở dưới, Confirm ở trên
+    plt.bar(iterations, network_ms, label="Network Latency (RPC)", color="#4e79a7")
+    plt.bar(iterations, confirm_ms, bottom=network_ms, label="Blockchain Confirm", color="#f28e2b")
+    
     plt.xlabel("Iteration")
     plt.ylabel("Time (ms)")
-    plt.title("End-to-End Latency Breakdown per Iteration")
+    plt.title("Time Breakdown: Network vs Confirmation")
     plt.legend()
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "chart1_stacked_bar_latency.png")
+    plt.savefig(OUTPUT_DIR / "1_time_breakdown.png")
     plt.close()
 
 
 def chart2_boxplot(data):
-    plt.figure(figsize=(8, 6))
-    plt.boxplot(
-        [data["client_ms"], data["network_ms"], data["total_ms"]],
-        labels=["Client", "Network", "Total"],
-        showfliers=False,
-    )
-    plt.ylabel("Time (ms)")
-    plt.title("Latency Distribution")
+    # Tạo 3 subplot (1 hàng, 3 cột)
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+    
+    # Cập nhật dataset: Network, Confirm, Total
+    datasets = [data["network_ms"], data["confirm_ms"], data["total_ms"]]
+    titles = ["Network Latency (ms)", "Confirmation Time (ms)", "Total End-to-End (ms)"]
+    colors = ["#4e79a7", "#f28e2b", "#e15759"] # Xanh, Cam, Đỏ
+
+    # Loop qua 3 biểu đồ để vẽ
+    for i, ax in enumerate(axes):
+        # Vẽ Boxplot
+        box = ax.boxplot(
+            datasets[i], 
+            patch_artist=True, 
+            showfliers=True, 
+            widths=0.6
+        )
+
+        # Tô màu và trang trí
+        for patch in box['boxes']:
+            patch.set_facecolor(colors[i])
+            patch.set_alpha(0.7)
+        
+        # Chỉnh màu cho đường trung vị (Median)
+        for median in box['medians']:
+            median.set_color('yellow')
+            median.set_linewidth(2)
+
+        # Trang trí trục
+        ax.set_title(titles[i], fontsize=12, fontweight='bold')
+        ax.set_ylabel("Time (ms)")
+        ax.grid(axis='y', linestyle='--', alpha=0.3)
+        
+        # Hiển thị thông số Median
+        if len(datasets[i]) > 0:
+            median_val = np.median(datasets[i])
+            ax.text(
+                1.1, median_val, 
+                f'Median:\n{median_val:.0f}', 
+                verticalalignment='center',
+                fontsize=10, fontweight='bold', color='#333333'
+            )
+            ax.set_xticks([])
+
+    plt.suptitle("Latency Distribution Analysis (Separated Boxplots)", fontsize=16)
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "chart2_boxplot_latency.png")
+    plt.savefig(OUTPUT_DIR / "2_latency_boxplot_separated.png")
     plt.close()
 
 
@@ -101,89 +136,101 @@ def chart3_line_total(data):
     total_ms = data["total_ms"]
 
     plt.figure(figsize=(10, 4))
-    plt.plot(iterations, total_ms, marker="o", linestyle="-", label="Total E2E latency")
+    plt.plot(iterations, total_ms, marker="o", linestyle="-", color="#e15759", label="Total Latency")
     plt.xlabel("Iteration")
     plt.ylabel("Time (ms)")
-    plt.title("Total End-to-End Latency over Iterations")
+    plt.title("Total End-to-End Latency Trend")
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "chart3_line_total_latency.png")
+    plt.savefig(OUTPUT_DIR / "3_total_latency_trend.png")
     plt.close()
 
 
 def chart4_gas_accuracy(data):
     iterations = data["iterations"]
     ui_gas = data["ui_gas"]
-    etherscan_fee = data["etherscan_fee"]
-    actual_gas = data["actual_gas"]
-    
-    use_etherscan_fee = any(f > 0 for f in etherscan_fee)
-    gas_data = etherscan_fee if use_etherscan_fee else actual_gas
-    gas_label = "Etherscan Fee" if use_etherscan_fee else "Actual Blockchain Fee"
+    actual_fee = data["fee_eth"]
 
-    plt.figure(figsize=(10, 4))
-    plt.scatter(iterations, ui_gas, color="blue", label="UI Estimated Fee", alpha=0.6)
-    plt.plot(iterations, ui_gas, color="blue", alpha=0.4)
-    plt.scatter(iterations, gas_data, color="red", label=gas_label, alpha=0.6)
-    plt.plot(iterations, gas_data, color="red", alpha=0.4)
+    plt.figure(figsize=(10, 5))
+    plt.plot(iterations, ui_gas, marker="x", linestyle="--", label="UI Estimate", color="blue")
+    plt.plot(iterations, actual_fee, marker="o", linestyle="-", label="Actual Fee", color="green")
+    
     plt.xlabel("Iteration")
-    plt.ylabel("Gas Fee (ETH)")
-    plt.title("Gas Estimation Accuracy per Iteration")
+    plt.ylabel("ETH")
+    plt.title("Gas Fee Accuracy: Estimated vs Actual")
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "chart4_gas_accuracy.png")
+    plt.savefig(OUTPUT_DIR / "4_gas_accuracy.png")
     plt.close()
 
 
-def chart5_rpc_reliability(data):
-    combined = []
-    for r, e in zip(data["rpc_status"], data["etherscan_status"]):
-        if r == "success" and e == "success":
-            combined.append("success")
-        elif r == "error" or e == "error":
-            combined.append("error")
-        else:
-            combined.append("fail")
-
-    success_count = combined.count("success")
-    fail_count = combined.count("fail")
-    error_count = combined.count("error")
-
-    labels = []
-    sizes = []
-    if success_count:
-        labels.append("Success")
-        sizes.append(success_count)
-    if fail_count:
-        labels.append("Fail")
-        sizes.append(fail_count)
-    if error_count:
-        labels.append("Error")
-        sizes.append(error_count)
-
-    if not sizes:
+def chart5_rpc_status(data):
+    status_list = data["rpc_status"]
+    counts = {}
+    for s in status_list:
+        counts[s] = counts.get(s, 0) + 1
+    
+    if not counts:
         return
 
+    labels = list(counts.keys())
+    sizes = list(counts.values())
+    colors = ['#76b7b2', '#ff9da7', '#edc948', '#b07aa1']
+
     plt.figure(figsize=(6, 6))
-    plt.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90)
-    plt.title("RPC Reliability (Success vs Fail/Error)")
+    plt.pie(sizes, labels=labels, autopct="%1.1f%%", startangle=90, colors=colors[:len(labels)])
+    plt.title("Transaction Status Distribution")
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "chart5_rpc_reliability.png")
+    plt.savefig(OUTPUT_DIR / "5_transaction_status.png")
+    plt.close()
+
+
+def chart6_balances(data):
+    iterations = data["iterations"]
+    sender = data["sender_balance"]
+    receiver = data["receiver_balance"]
+    
+    if sum(sender) == 0 and sum(receiver) == 0:
+        return
+
+    fig, ax1 = plt.subplots(figsize=(10, 5))
+
+    color = 'tab:red'
+    ax1.set_xlabel('Iteration')
+    ax1.set_ylabel('Sender Balance (ETH)', color=color)
+    ax1.plot(iterations, sender, color=color, linestyle='-', marker='o', markersize=3, label="Sender")
+    ax1.tick_params(axis='y', labelcolor=color)
+
+    ax2 = ax1.twinx()
+    color = 'tab:green'
+    ax2.set_ylabel('Receiver Balance (ETH)', color=color)
+    ax2.plot(iterations, receiver, color=color, linestyle='-', marker='x', markersize=3, label="Receiver")
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    plt.title("Wallet Balances Over Time")
+    fig.tight_layout()
+    plt.savefig(OUTPUT_DIR / "6_balance_changes.png")
     plt.close()
 
 
 def main():
     data = load_data()
+    
+    if not data["iterations"]:
+        print("File CSV rỗng hoặc không có dữ liệu hợp lệ.")
+        return
 
+    print("Đang vẽ biểu đồ...")
     chart1_stacked_bar(data)
     chart2_boxplot(data)
     chart3_line_total(data)
     chart4_gas_accuracy(data)
-    chart5_rpc_reliability(data)
+    chart5_rpc_status(data)
+    chart6_balances(data)
 
-    print(f"Đã vẽ biểu đồ vào thư mục: {OUTPUT_DIR}")
+    print(f"✅ Hoàn tất! Đã lưu 6 biểu đồ vào thư mục: {OUTPUT_DIR.absolute()}")
 
 
 if __name__ == "__main__":
