@@ -27,10 +27,9 @@ export function CreatePasswordScreen({ onCreate }: CreatePasswordScreenProps) {
     <main className="min-h-screen flex items-center justify-center bg-night text-white">
       <div className="glass-panel w-full max-w-md p-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Tạo Master Password</h1>
+          <h1 className="text-2xl font-semibold text-white">Tạo Password</h1>
           <p className="mt-2 text-sm text-slate">
-            Đây là mật khẩu dùng để mã hóa tất cả ví của bạn trên thiết bị này. Mật khẩu chỉ được giữ trong RAM
-            và không được lưu trữ ở bất cứ đâu.
+            Đây là mật khẩu dùng để mã hóa tất cả ví của bạn trên thiết bị này.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">

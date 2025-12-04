@@ -12,7 +12,7 @@ if (!TEST_PRIVATE_KEY_SEND || !TEST_PRIVATE_KEY_RECEIVED) {
   throw new Error('Missing TEST_PRIVATE_KEY_SEND or TEST_PRIVATE_KEY_RECEIVED in .env')
 }
 
-const ITERATIONS = 10
+const ITERATIONS = 50
 const RPC_URL = 'https://eth-sepolia.g.alchemy.com/v2/JHMPq2BwZMBC983UnVbyF'
 const provider = new JsonRpcProvider(RPC_URL)
 provider.pollingInterval = 500

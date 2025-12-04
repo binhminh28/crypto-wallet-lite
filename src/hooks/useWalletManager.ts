@@ -53,7 +53,7 @@ export function useWalletManager({ initialWallets, initialNetwork, sessionPasswo
 
   const createWallet = async (label?: string): Promise<WalletSecrets> => {
     if (!sessionPassword) {
-      throw new Error('Bạn cần nhập master password trước khi tạo ví')
+      throw new Error('Bạn cần nhập password trước khi tạo ví')
     }
 
     const wallet = Wallet.createRandom()
@@ -83,7 +83,7 @@ export function useWalletManager({ initialWallets, initialNetwork, sessionPasswo
 
   const importWallet = async (input: { label?: string; privateKey?: string; seedPhrase?: string }): Promise<WalletSecrets> => {
     if (!sessionPassword) {
-      throw new Error('Bạn cần nhập master password trước khi import ví')
+      throw new Error('Bạn cần nhập password trước khi import ví')
     }
 
     let wallet: Wallet

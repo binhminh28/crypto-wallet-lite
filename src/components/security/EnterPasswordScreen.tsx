@@ -24,9 +24,9 @@ export function EnterPasswordScreen({ onSubmit, error }: EnterPasswordScreenProp
     <main className="min-h-screen flex items-center justify-center bg-night text-white">
       <div className="glass-panel w-full max-w-md p-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Nhập Master Password</h1>
+          <h1 className="text-2xl font-semibold text-white">Nhập Password</h1>
           <p className="mt-2 text-sm text-slate">
-            Đã phát hiện ví được lưu trên thiết bị này. Vui lòng nhập master password để giải mã và sử dụng ví.
+            Đã phát hiện ví được lưu trên thiết bị này. Vui lòng nhập password để giải mã và sử dụng ví.
           </p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -37,7 +37,7 @@ export function EnterPasswordScreen({ onSubmit, error }: EnterPasswordScreenProp
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-white placeholder:text-slate"
-              placeholder="Nhập master password"
+              placeholder="Nhập password"
               autoFocus
             />
           </div>

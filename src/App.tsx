@@ -136,7 +136,11 @@ function App() {
     }, 0)
   }, [currentTokens, walletManager.selectedNetwork])
   
-  const gasFee = blockchainSnapshot.gasPrice || '0.000021'
+  const gasFee = useMemo(() => {
+    const price = parseFloat(blockchainSnapshot.gasPrice || '0.00000005')
+    const limit = 21000 
+    return (price * limit).toFixed(8) 
+  }, [blockchainSnapshot.gasPrice])
 
   const [txError, setTxError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -167,7 +171,7 @@ function App() {
         return
       }
       if (!sessionWallet) {
-        setTxError('Bạn cần unlock ví bằng master password và chọn ví để ký giao dịch')
+        setTxError('Bạn cần unlock ví bằng password và chọn ví để ký giao dịch')
         isSubmittingRef.current = false
         setIsSubmitting(false)
         return
@@ -243,7 +247,7 @@ function App() {
         setSessionWallet(decrypted)
       } catch (error) {
         console.error('Failed to decrypt wallet with current session password:', error)
-        setTxError('Không thể giải mã ví với master password hiện tại. Vui lòng thử lại.')
+        setTxError('Không thể giải mã ví với password hiện tại. Vui lòng thử lại.')
         setSessionWallet(null)
       }
     },
